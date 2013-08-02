@@ -17,14 +17,9 @@ import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.FormType;
-import org.jivesoftware.smackx.pubsub.ItemPublishEvent;
-import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.PayloadItem;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.jivesoftware.smackx.pubsub.PublishModel;
-import org.jivesoftware.smackx.pubsub.SimplePayload;
-import org.jivesoftware.smackx.pubsub.listener.ItemEventListener;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.ActivityManager;
@@ -38,7 +33,7 @@ import android.os.IBinder;
 import android.os.StrictMode;
 import android.util.Log;
 
-import com.omf.resourcecontroller.R;
+import com.omf.resourcecontroller.OMF.OMFMessage;
 import com.omf.resourcecontroller.parser.XMPPParser;
 
 public class BackgroundService extends Service implements Constants{
@@ -55,7 +50,8 @@ public class BackgroundService extends Service implements Constants{
 	
 	//XMPP Parser 
 	private XMPPParser parser = null;
-	
+	//HashMap
+	OMFMessage omfMessage = null;
 	
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -79,10 +75,11 @@ public class BackgroundService extends Service implements Constants{
 		// Allow the connection to be established in the main thread
 		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 		StrictMode.setThreadPolicy(policy);
-	
+		
 		//Init aSmack
 		Context context = getApplicationContext();
 		SmackAndroid.init(context);
+		
 		// XMPP CONNECTION
 		connConfig = new ConnectionConfiguration(SERVER,PORT);
 		xmpp = new XMPPConnection(connConfig);
@@ -155,7 +152,7 @@ public class BackgroundService extends Service implements Constants{
 			
 			//Node configuration form
 			ConfigureForm f = new ConfigureForm(FormType.submit);
-			
+			//TODO to createNode se diaforetikh methodo
 			/**
 			 * Configure form
 			 */
@@ -188,14 +185,14 @@ public class BackgroundService extends Service implements Constants{
 			
 				//eventNode.subscribe("alpha@nitlab.inf.uth.gr");
 				//#1pub
-				SimplePayload payload1 = new SimplePayload("book","pubsub:test:book", "<book xmlns='pubsub:test:book'><title>Lord of the Rings</title></book>");
-				PayloadItem payloadItem1 = new PayloadItem(null, payload1);
-				((LeafNode)eventNode).publish(payloadItem1);
+				//SimplePayload payload1 = new SimplePayload("book","pubsub:test:book", "<book xmlns='pubsub:test:book'><title>Lord of the Rings</title></book>");
+				//PayloadItem payloadItem1 = new PayloadItem(null, payload1);
+				//((LeafNode)eventNode).publish(payloadItem1);
 				
 				//#2pub
-				SimplePayload payload2 = new SimplePayload("book","pubsub:test:book", "<book xmlns='pubsub:test:book'><title>Book 2</title></book>");
-				PayloadItem payloadItem2 = new PayloadItem(null, payload2);
-				((LeafNode)eventNode).publish(payloadItem2);
+				//SimplePayload payload2 = new SimplePayload("book","pubsub:test:book", "<book xmlns='pubsub:test:book'><title>Book 2</title></book>");
+				//PayloadItem payloadItem2 = new PayloadItem(null, payload2);
+				//((LeafNode)eventNode).publish(payloadItem2);
 
 				PacketFilter filter = new PacketFilter() {
 			        public boolean accept(Packet packet) {
@@ -211,21 +208,24 @@ public class BackgroundService extends Service implements Constants{
 			        	//System.out.println("XML Packet: "+packet.toXML());
 			        	//Log.i(TAG,"XML Packet: "+packet.toXML());
 			        	parser = new XMPPParser();
+			        	System.out.println(packet.toXML());
 			        	try {
-							parser.XMLParse(packet.toXML());
+			        		omfMessage = parser.XMLParse(packet.toXML());
+			        		if(!omfMessage.isEmpty())
+			        			System.out.println(omfMessage.toString());
 						} catch (XmlPullParserException e) {
 							Log.e(TAG,"PullParser exception");
 						} catch (IOException e) {
 							Log.e(TAG,"IO exception");
 						}
-			            //System.out.println(packet.toXML());
+			            
 			        }
 			    };
 			    
 			//Subscribe and add Listeners
 			try {
 				//node event listener
-				eventNode.addItemEventListener(new ItemEventCoordinator());
+				//eventNode.addItemEventListener(new ItemEventCoordinator());
 				//xmpp packet listener
 				xmpp.addPacketListener(packetListener,filter);
 				
@@ -252,8 +252,8 @@ public class BackgroundService extends Service implements Constants{
 		}
 	};*/
 	
-	
-	
+	//ITEM LISTENER - Inactive - using packet listener instead
+/*	
 	class ItemEventCoordinator  implements ItemEventListener
     {
         @Override
@@ -263,7 +263,7 @@ public class BackgroundService extends Service implements Constants{
             //System.out.println("Items: "+items.getItems().toString());    
         }
     }
-	
+	*/
 	
 	
 	/**
@@ -301,11 +301,11 @@ public class BackgroundService extends Service implements Constants{
 	// XML String generator
 	public String XMLGenerator(String start){
 		
-		long unixTime = System.currentTimeMillis() / 1000L;
+		//long unixTime = System.currentTimeMillis() / 1000L;
 		
 		String s = "test";
-		String namespace = "http://schema.mytestbed.net/omf/6.0/protocol";
-		String ts = "<ts>"+unixTime+"</ts>";
+		//String namespace = "http://schema.mytestbed.net/omf/6.0/protocol";
+		//String ts = "<ts>"+unixTime+"</ts>";
 		
 		return s;
 	}

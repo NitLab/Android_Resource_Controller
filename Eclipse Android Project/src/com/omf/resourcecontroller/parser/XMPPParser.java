@@ -45,6 +45,7 @@ public class XMPPParser {
 	        	 {   //System.out.println("Message:"+xpp.getName());
 	        		 //OMFMessage.put("message", xpp.getName());
 	        		 message.setMessageType(xpp.getName());
+	        		 message.setMessageID(xpp.getAttributeValue(null, "mid"));
 	        		 
 	        		 while( !((eventType == XmlPullParser.END_TAG) && (xpp.getName().equalsIgnoreCase("request") || xpp.getName().equalsIgnoreCase("configure") || xpp.getName().equalsIgnoreCase("create"))))
 	        		 {

@@ -8,18 +8,18 @@ import java.util.List;
 
 import org.jivesoftware.smack.AccountManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackAndroid;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.FormType;
+import org.jivesoftware.smackx.pubsub.ItemPublishEvent;
 import org.jivesoftware.smackx.pubsub.Node;
+import org.jivesoftware.smackx.pubsub.PayloadItem;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.jivesoftware.smackx.pubsub.PublishModel;
+import org.jivesoftware.smackx.pubsub.listener.ItemEventListener;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.ActivityManager;
@@ -50,7 +50,7 @@ public class BackgroundService extends Service implements Constants{
 	
 	//XMPP Parser 
 	private XMPPParser parser = null;
-	//HashMap
+	//OMF message object
 	OMFMessage omfMessage = null;
 	
 	@Override
@@ -133,6 +133,8 @@ public class BackgroundService extends Service implements Constants{
 						Log.e(TAG,"Registration failed");
 					}
 			}
+			
+			//If xmpp is logged in declare your presence
 			if(xmpp.isAuthenticated()){
 				//Declare presence
 				Presence presence = new Presence(Presence.Type.available);
@@ -145,14 +147,13 @@ public class BackgroundService extends Service implements Constants{
 		
 		
 		/**
-		 * PUBLISH SUBSCRIBE
+		 * Create node
 		 */
 		if(xmpp.isAuthenticated()){
 			pubmgr = new PubSubManager(xmpp);
 			
 			//Node configuration form
 			ConfigureForm f = new ConfigureForm(FormType.submit);
-			//TODO to createNode se diaforetikh methodo
 			/**
 			 * Configure form
 			 */
@@ -165,9 +166,10 @@ public class BackgroundService extends Service implements Constants{
 				eventNode = pubmgr.getNode(TOPIC);
 			}catch(XMPPException e){
 				//e.printStackTrace();
-				Log.e(TAG, "Problem getting node");
+				Log.e(TAG, "Problem getting node "+ TOPIC);
 				//If node doesn't exist create it
 				try {
+					Log.i(TAG, "Creating node "+TOPIC);
 					eventNode = pubmgr.createNode(TOPIC,f);
 				} catch (XMPPException e1) {
 					//e1.printStackTrace();
@@ -193,26 +195,42 @@ public class BackgroundService extends Service implements Constants{
 				//SimplePayload payload2 = new SimplePayload("book","pubsub:test:book", "<book xmlns='pubsub:test:book'><title>Book 2</title></book>");
 				//PayloadItem payloadItem2 = new PayloadItem(null, payload2);
 				//((LeafNode)eventNode).publish(payloadItem2);
-
+				
+				/**
+				 * Packet filter
+				 */
+			/*
 				PacketFilter filter = new PacketFilter() {
 			        public boolean accept(Packet packet) {
 			            return true;
 			        }
 			    };
+			    */
 				// This will collect all XMPP messages
 			    //PacketCollector collector = xmpp.createPacketCollector(filter);
 			    
+			    
+			    /**
+			     * Packet listener and handler
+			     * Gets all XMPP packets and parses them
+			     * @param packet:Packet 
+			     * 
+			     */
+			    /*
 			    PacketListener packetListener = new PacketListener() {
 			        public void processPacket(Packet packet) {
 			            // Do something with the incoming packet here.
 			        	//System.out.println("XML Packet: "+packet.toXML());
 			        	//Log.i(TAG,"XML Packet: "+packet.toXML());
 			        	parser = new XMPPParser();
-			        	System.out.println(packet.toXML());
+			        	//System.out.println(packet.toXML());
 			        	try {
 			        		omfMessage = parser.XMLParse(packet.toXML());
 			        		if(!omfMessage.isEmpty())
+			        		{
 			        			System.out.println(omfMessage.toString());
+			        			OMFHandler(omfMessage);
+			        		}
 						} catch (XmlPullParserException e) {
 							Log.e(TAG,"PullParser exception");
 						} catch (IOException e) {
@@ -220,15 +238,20 @@ public class BackgroundService extends Service implements Constants{
 						}
 			            
 			        }
-			    };
+			    };			    
+			    */
 			    
+			/**
+			 * Bind packet listener to the xmpp connection and subscribe to a node
+			 */
 			//Subscribe and add Listeners
 			try {
 				//node event listener
-				//eventNode.addItemEventListener(new ItemEventCoordinator());
+				eventNode.addItemEventListener(new ItemEventCoordinator());
 				//xmpp packet listener
-				xmpp.addPacketListener(packetListener,filter);
+				//xmpp.addPacketListener(packetListener,filter);
 				
+				//Subscribe to the node
 				eventNode.subscribe(xmpp.getUser());
 			} catch (XMPPException e) {
 				e.printStackTrace();
@@ -242,6 +265,7 @@ public class BackgroundService extends Service implements Constants{
 	/**
 	 * HERE CREATE THE EVENT LISTENERS FOR EACH EVENT/ PUBSUB
 	 */
+	
 	/*
 	@SuppressWarnings("rawtypes")
 	ItemEventListener eventListener = new ItemEventListener() {
@@ -253,17 +277,44 @@ public class BackgroundService extends Service implements Constants{
 	};*/
 	
 	//ITEM LISTENER - Inactive - using packet listener instead
-/*	
-	class ItemEventCoordinator  implements ItemEventListener
+	@SuppressWarnings("rawtypes")
+	class ItemEventCoordinator  implements ItemEventListener <PayloadItem>
     {
         @Override
-        public void handlePublishedItems(ItemPublishEvent items)
+        public void handlePublishedItems(ItemPublishEvent <PayloadItem> items)
         {
-            //System.out.println("Item count: " + items.getItems().size());
-            //System.out.println("Items: "+items.getItems().toString());    
+        	
+        	parser = new XMPPParser();
+            
+            //System.out.println("Items: "+items.isDelayed());
+        	//System.out.println();
+            List<PayloadItem> payloads = items.getItems();
+            for(PayloadItem item : payloads)
+			{
+				//System.out.println("test: "+item.toXML());
+				if(!items.isDelayed())
+				{
+					try {
+		        		omfMessage = parser.XMLParse(item.toXML());
+		        		if(!omfMessage.isEmpty())
+		        		{
+		        			System.out.println(omfMessage.toString());
+		        			OMFHandler(omfMessage);
+		        		}
+					} catch (XmlPullParserException e) {
+						Log.e(TAG,"PullParser exception");
+					} catch (IOException e) {
+						Log.e(TAG,"IO exception");
+					}
+				}
+			}
+            
+            
         }
     }
-	*/
+	
+	
+	
 	
 	
 	/**
@@ -272,6 +323,7 @@ public class BackgroundService extends Service implements Constants{
 	 * @param username : String
 	 * @param pass : String
 	 * @throws XMPPException
+	 * @returns boolean: False if registration failed, else true
 	 */
 	public boolean registerUser(XMPPConnection mycon, String username, String  pass) throws XMPPException{
 		if(mycon != null && username!= null && pass != null){
@@ -296,6 +348,32 @@ public class BackgroundService extends Service implements Constants{
 			return true;
 		}
 		return false;
+	}
+	
+	public void OMFHandler(OMFMessage message){
+		
+		if(message.getMessageType().equalsIgnoreCase("create"))
+		{
+			message.OMFCreate();
+			displayNotificationMessage(message.getMessageType()+"message received");
+		}
+		else if (message.getMessageType().equalsIgnoreCase("configure"))
+		{
+			message.OMFConfigure();
+			displayNotificationMessage(message.getMessageType()+"message received");
+		}
+		else if (message.getMessageType().equalsIgnoreCase("request"))
+		{
+			message.OMFRequest();
+			displayNotificationMessage(message.getMessageType()+"message received");
+		}
+		else if (message.getMessageType().equalsIgnoreCase("inform"))
+		{
+			message.OMFInform();
+			displayNotificationMessage(message.getMessageType()+"message received");
+		}
+		
+		return;
 	}
 	
 	// XML String generator

@@ -6,14 +6,17 @@ public class OMFMessage {
 	
 	//Object variables
 	private String  messageType;
+	private String messageID;
 	private long ts;
 	private String src;
 	HashMap<String, String> properties;
 	private String type;
 	
+	
 	//Constructor 
 	public OMFMessage(){
 		messageType = null;
+		messageID = null;
 		ts = 1234567890L;
 		src = null;
 		type = null;
@@ -26,6 +29,15 @@ public class OMFMessage {
 	
 	public String getMessageType(){
 		return this.messageType;
+	}
+	
+	//Message id
+	public void setMessageID(String MessageType){
+		this.messageID = MessageType;
+	}
+		
+	public String getMessageID(){
+		return this.messageID;
 	}
 	
 	//Timestamp
@@ -66,6 +78,7 @@ public class OMFMessage {
 	
 	public String toString(){
 		String s = "Message type: "+messageType+"\n"+
+					"Message ID:"+messageID+"\n"+
 					"Source: "+src+"\n"+
 					"Timestamp: "+Long.toString(ts)+"\n"+
 					"Properties: "+properties.toString()+"\n";
@@ -85,6 +98,31 @@ public class OMFMessage {
 			return false;
 		}
 		return true;
+	}
+	
+	
+	public void OMFCreate(){
+		//Code to create something
+		System.out.println(this.messageType);
+		return;
+	}
+	
+	public void OMFConfigure(){
+		//Code to configure something
+		System.out.println(this.messageType);
+		return;
+	}
+	
+	public void OMFRequest(){
+		//Code to reply to a certain request
+		System.out.println(this.messageType);
+		return;
+	}
+	
+	public void OMFInform(){
+		//Code to inform someone of something
+		System.out.println(this.messageType);
+		return;
 	}
 	
 }

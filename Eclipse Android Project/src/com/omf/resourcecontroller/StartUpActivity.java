@@ -3,17 +3,15 @@ package com.omf.resourcecontroller;
 import java.util.Iterator;
 import java.util.List;
 
-import com.omf.resourcecontroller.R;
-
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-//import android.view.Menu;
 import android.view.View;
 import android.widget.ToggleButton;
+//import android.view.Menu;
 
 public class StartUpActivity extends Activity {
 	
@@ -75,6 +73,7 @@ public class StartUpActivity extends Activity {
 	View.OnClickListener toggleListener = new View.OnClickListener(){
 		@Override
 		public void onClick(View v) {
+			
 			Intent intent = new Intent(StartUpActivity.this, BackgroundService.class);
 			intent.addFlags(Service.START_STICKY);
 			intent.addFlags(Service.BIND_AUTO_CREATE);

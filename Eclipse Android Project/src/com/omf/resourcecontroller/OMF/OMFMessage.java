@@ -72,8 +72,14 @@ public class OMFMessage {
 	}
 	
 	
-	public HashMap<String, String> getProperty(){
+	public HashMap<String, String> getProperties(){
+		
 		return this.properties;
+	}
+	
+	public String getProperty(String key){
+		
+		return this.properties.get(key);
 	}
 	
 	public String toString(){
@@ -84,12 +90,22 @@ public class OMFMessage {
 					"Properties: "+properties.toString()+"\n";
 					
 					
-		if(messageType.equalsIgnoreCase("inform"))
+		if(messageType.equalsIgnoreCase("inform") || messageType.equalsIgnoreCase("release"))
 			s+="Itype: "+type+"\n";
 		else if(messageType.equalsIgnoreCase("create"))
 			s+="Rtype: "+type+"\n";
 		
 		return s;
+	}
+	
+	public boolean equals(String mid){
+		
+		if(this.messageID.equalsIgnoreCase(mid))
+		{
+			return true;
+		}
+			
+		return false;
 	}
 	
 	public boolean isEmpty()
@@ -124,5 +140,13 @@ public class OMFMessage {
 		System.out.println(this.messageType);
 		return;
 	}
+	
+	public void OMFRelease(){
+		//Code to inform someone of something
+		System.out.println(this.messageType);
+		return;
+	}
+	
+	
 	
 }

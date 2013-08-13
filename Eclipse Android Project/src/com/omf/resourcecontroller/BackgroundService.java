@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.os.StrictMode;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.omf.resourcecontroller.OMF.OMFMessage;
@@ -25,6 +26,8 @@ public class BackgroundService extends Service implements Constants{
 	
 	// Service variables
 	private NotificationManager notificationMgr = null;		//	NOTIFICATION MANAGER
+	private TelephonyManager  telephonyMgr = null;
+	
 	// XMPP variables
 	//private XMPPConnection xmpp = null;						// 	XMPP CONNECTION VAR
 	//private ConnectionConfiguration connConfig = null;		//  XMPP CONFIGURATION
@@ -34,8 +37,15 @@ public class BackgroundService extends Service implements Constants{
 	private XMPPClass test = null;
 	//XMPP Parser 
 	//private XMPPParser parser = null;
+	
 	//OMF message object
 	OMFMessage omfMessage = null;
+	
+	//Username & password
+	private String UnamePass = null;
+	
+	//TopicName
+	private String topicName = null;
 	
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -53,6 +63,10 @@ public class BackgroundService extends Service implements Constants{
 		// Notification manager Service
 		notificationMgr = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
+		// TelephonyMgr
+		telephonyMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);;
+		topicName = telephonyMgr.getDeviceId();
+		UnamePass = "android.omf."+topicName;
 		
 		/////////////	THREAD POLICY
 		
@@ -68,7 +82,7 @@ public class BackgroundService extends Service implements Constants{
 		//connConfig = new ConnectionConfiguration(SERVER,PORT);
 		//xmpp = new XMPPConnection(connConfig);
 		// test = new XMPPClass("BackgroundServiceThread","AndroidThreadTest","pw",getApplicationContext());
-		 test = new XMPPClass(USERNAME,PASSWORD,getApplicationContext());
+		 test = new XMPPClass(UnamePass, UnamePass, topicName, getApplicationContext());
 	}
 
 	@Override
@@ -100,6 +114,7 @@ public class BackgroundService extends Service implements Constants{
 		//test.start();
 		
 		test.XMPPCreateConnection();
+		
 	}
 	
 	

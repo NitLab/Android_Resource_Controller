@@ -6,4 +6,5 @@ public interface Constants {
 	public static final int PORT = 5222;
 	//public static final String USERNAME = "android.xperia.miro1";
 	//public static final String PASSWORD = "pw"; 
+	public static final String SCHEMA= "http://schema.mytestbed.net/omf/6.0/protocol";
 }

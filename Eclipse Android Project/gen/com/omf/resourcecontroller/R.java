@@ -11,23 +11,43 @@ public final class R {
     public static final class attr {
     }
     public static final class color {
+        /**  COLORS 
+         */
         public static final int black=0x7f050000;
+        public static final int nitlab_blue=0x7f050002;
+        public static final int white=0x7f050001;
     }
     public static final class drawable {
         public static final int ic_launcher=0x7f020000;
-        public static final int resource_controller=0x7f020001;
+        public static final int nitlab_app_image=0x7f020001;
+        public static final int nitlab_logo_layers=0x7f020002;
+        public static final int nitlab_n_app_logo=0x7f020003;
+        public static final int nitlab_square=0x7f020004;
+        public static final int resource_controller=0x7f020005;
+        public static final int settings_android=0x7f020006;
+        public static final int settings_android_130_percent=0x7f020007;
     }
     public static final class id {
-        public static final int ToggleBtnServ=0x7f080001;
-        public static final int menu_settings=0x7f080002;
+        public static final int ToggleBtnServ=0x7f080008;
+        public static final int button1=0x7f080007;
+        public static final int editText1=0x7f080003;
+        public static final int editText2=0x7f080002;
+        public static final int imageView1=0x7f080001;
+        public static final int menu_settings=0x7f080009;
+        public static final int settings=0x7f08000a;
         public static final int textView1=0x7f080000;
+        public static final int textView2=0x7f080006;
+        public static final int textView3=0x7f080005;
+        public static final int textView4=0x7f080004;
     }
     public static final class layout {
-        public static final int activity_start_up=0x7f030000;
+        public static final int activity_settings=0x7f030000;
+        public static final int activity_start_up=0x7f030001;
     }
     public static final class menu {
         public static final int activity_background_service=0x7f070000;
         public static final int activity_start_up=0x7f070001;
+        public static final int menu=0x7f070002;
     }
     public static final class string {
         public static final int app_name=0x7f040000;
@@ -37,10 +57,20 @@ public final class R {
         public static final int btn_id=0x7f040004;
         public static final int btn_service_start=0x7f040005;
         public static final int btn_service_stop=0x7f040006;
+        public static final int configuration=0x7f04000a;
+        public static final int configure_button=0x7f040007;
+        public static final int hint1=0x7f04000d;
+        public static final int hint2=0x7f04000e;
+        public static final int main_menu=0x7f040008;
         public static final int menu_settings=0x7f040001;
+        public static final int nitlab_image=0x7f04000f;
+        public static final int settings_menu=0x7f040009;
+        public static final int submit_btn=0x7f040010;
         /**  SERVICE 
          */
         public static final int title_activity_background_service=0x7f040003;
+        public static final int uid=0x7f04000b;
+        public static final int uri=0x7f04000c;
     }
     public static final class style {
         /** 
@@ -64,10 +94,13 @@ public final class R {
     
  API 14 theme customizations can go here. 
          */
-        public static final int AppBaseTheme=0x7f060000;
+        public static final int AppBaseTheme=0x7f060001;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static final int AppTheme=0x7f060001;
+        public static final int AppTheme=0x7f060002;
+        /**  STYLES 
+         */
+        public static final int SwitchTextAppearance=0x7f060000;
     }
 }

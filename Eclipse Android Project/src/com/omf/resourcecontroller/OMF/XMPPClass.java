@@ -3,6 +3,7 @@ package com.omf.resourcecontroller.OMF;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import org.jivesoftware.smack.AccountManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -15,22 +16,26 @@ import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.FormType;
 import org.jivesoftware.smackx.pubsub.ItemPublishEvent;
+import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.jivesoftware.smackx.pubsub.PublishModel;
+import org.jivesoftware.smackx.pubsub.SimplePayload;
 import org.jivesoftware.smackx.pubsub.listener.ItemEventListener;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import com.omf.resourcecontroller.Constants;
 import com.omf.resourcecontroller.parser.XMPPParser;
+import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 /**
  * 
- * 
+ * XMPPClass
  *
  */
 
@@ -56,7 +61,7 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 		
 		//XMPP Parser 
 		private XMPPParser parser = null;
-		
+		private XMPPParserV2 parser2 = null;
 		//OMF message object
 		private OMFMessage omfMessage = null;
 		
@@ -67,6 +72,9 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 		
 		//flag
 		private boolean flag;
+		
+		//Device Managers
+		WifiManager wifiManager = null;
 		
 
 		/**
@@ -90,6 +98,8 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 			Topic = topicName;
 			ctx = appContext;
 			flag = true;
+			
+			
 		}
 		
 		public XMPPConnection XMPPCreateConnection(){
@@ -107,7 +117,7 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 					Log.i(TAG,"XMPP connected");
 			}catch(XMPPException e){
 				Log.e(TAG, "XMPP connection failed");
-				e.printStackTrace();
+				Log.d(TAG, "Check device connectivity");
 				xmpp = null;
 			}
 			
@@ -117,7 +127,7 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 				xmpp.addConnectionListener(connectionListener);
 			}
 			
-			//Add ping manager to deal with disconnections (after 6 minutes idle xmpp disconnects)
+			//Add ping manager to deal with disconnections (after 6 minutes idle, xmpp disconnects)
 			PingManager.getInstanceFor(xmpp).setPingIntervall(5*60*1000);	//5 minutes (5*60*1000 in millisecons)
 			
 			
@@ -138,7 +148,7 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 				pubmgr = new PubSubManager(xmpp);
 			}
 			//CreateTopic
-			createTopic(Topic, false);
+			createTopic(Topic, false, "main");
 	
 			return xmpp;
 		}
@@ -177,7 +187,7 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 		
 		
 		
-		public void createTopic(String topicName , boolean isProxy){
+		public Node createTopic(String topicName , boolean isProxy, String rType){
 			
 			if(xmpp.isAuthenticated()){
 					//New node
@@ -198,6 +208,8 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 					
 					try{
 						eventNode = pubmgr.getNode(topicName);
+						//Put node to hashmap
+						Nodes.put(topicName,eventNode);
 					}catch(XMPPException e){
 						//e.printStackTrace();
 						Log.e(TAG, "Problem getting node "+ topicName);
@@ -211,14 +223,14 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 						} catch (XMPPException e1) {
 							//e1.printStackTrace();
 							Log.e(TAG, "Problem creating event "+topicName);
-							
+							return null;
 						}
 					}
 					
 					
 					try {
 						//Add event listener
-						eventListener = new ItemEventCoordinator(isProxy);
+						eventListener = new ItemEventCoordinator(isProxy, rType);
 						eventNode.addItemEventListener(eventListener);
 						//Put node listener created in a hashMap
 						NodeListeners.put(topicName, eventListener);
@@ -228,9 +240,9 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 					} catch (XMPPException e) {
 						e.printStackTrace();
 					}
-				
+					return eventNode;
 			}
-			//return newNode;
+			return null;
 		}
 		
 		/**
@@ -266,38 +278,8 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 		}
 		
 		
-	public void OMFHandler(OMFMessage message){
-			
-			if(message.getMessageType().equalsIgnoreCase("create"))
-			{
-				//message.OMFCreate();
-				
-				createTopic(message.getProperty("uid"),true);
-				
-			}
-			else if (message.getMessageType().equalsIgnoreCase("configure"))
-			{
-				//message.OMFConfigure();
-				
-			}
-			else if (message.getMessageType().equalsIgnoreCase("request"))
-			{
-				//message.OMFRequest();
-				
-			}
-			else if (message.getMessageType().equalsIgnoreCase("inform"))
-			{
-				//message.OMFInform();
-				
-			}
-			else if (message.getMessageType().equalsIgnoreCase("release"))
-			{
-				//message.OMFInform();
-				
-			}
-			
-			return;
-		}
+	
+	
 	
 		public void destroyConnection(){
 			
@@ -317,6 +299,11 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 			ItemEventCoordinator nodeListener = NodeListeners.get(topicName);
 		    node.removeItemEventListener(nodeListener);
 		    Nodes.remove(topicName);
+		    try {
+				pubmgr.deleteNode(topicName);
+			} catch (XMPPException e) {
+				Log.e(TAG,"Problem deleting node "+topicName);
+			}
 		}
 	
 		public void destroyTopics(){
@@ -352,11 +339,15 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 			private boolean duplicateFlag;
 			private int in;
 			private boolean Proxy;
-			public ItemEventCoordinator(boolean isProxy){
+			private String rType;
+			
+			public ItemEventCoordinator(boolean isProxy, String rType){
 				
 	    		duplicateCheck = new String[10];
 	    		duplicateFlag = false;
 	    		this.Proxy = isProxy;
+	    		this.rType = rType;
+	    		
 	    		
 	    		in = 0;
 	    		for(int j=0;j<10;j++)
@@ -369,6 +360,11 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 	        public void handlePublishedItems(ItemPublishEvent <PayloadItem> items)
 	        {
 	        	parser = new XMPPParser();
+	        	try {
+					parser2 = new XMPPParserV2();
+				} catch (XmlPullParserException e1) {
+					Log.e(TAG, "Updated Parser  problem");
+				}
 	            List<PayloadItem> payloads = items.getItems();
 	            for(PayloadItem item : payloads)
 				{
@@ -376,7 +372,12 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 					{
 						try {
 			        		omfMessage = parser.XMLParse(item.toXML());
+			        		Log.e(TAG, "Reached this far!!!!!!!!!!");
+			        		System.out.println(omfMessage.toString());
+			        		Log.e(TAG, "Reached this far2!!!!!!!!!!");
+			        		System.out.println("parser2: " + parser2.XMLParse(item.toXML()).toString());
 			        		
+			        		System.out.println(item.toString());
 			        		if(!omfMessage.isEmpty())
 			        		{
 			        			duplicateFlag = false;
@@ -397,10 +398,18 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 			        				if(Proxy)
 			        				{
 			        					System.out.println("This is a resource proxy");
+			        					if(rType.equalsIgnoreCase("network")){
+			        						System.out.println("Network");
+			        						OMFNetworkHandler(omfMessage);
+			        					}
+			        					else if(rType.equalsIgnoreCase("application"))
+			        					{
+			        						System.out.println("STARTING APPLICATION");
+			        					}
 			        				}
 			        				else
 			        				{
-		        						OMFHandler(omfMessage);
+		        						OMFMainHandler(omfMessage);
 			        				}
 		        					System.out.println(omfMessage.toString());
 		        				}
@@ -445,6 +454,129 @@ import com.omf.resourcecontroller.parser.XMPPParser;
 		}
 		
 		
+		/**
+		 * OMF Message handlers
+		 * @param message : OMF message type
+		 */
+		
+		public void OMFMainHandler(OMFMessage message){
+			
+			if(message.getMessageType().equalsIgnoreCase("create"))
+			{
+				//message.OMFCreate();
+				createTopic((String)message.getProperty("uid"),true, message.getType());
+				System.out.println(message.getProperty("uid"));
+			}
+			else if (message.getMessageType().equalsIgnoreCase("configure"))
+			{
+				
+				String membership = (String) message.getProperty("membership");
+				if (membership != null) {
+					Node newNode = null;
+					System.out.println("test");
+					//Send Inform to main topic
+					Node mainNode = Nodes.get(Topic);
+					OMFMessageGenerator(mainNode, "inform", message, "membership");
+					
+					//Subscribe to membership, or create the topic
+					newNode = createTopic(membership,false,"");
+					OMFMessageGenerator(newNode, "inform", message, "membership");
+					
+				}
+			}
+			else if (message.getMessageType().equalsIgnoreCase("request"))
+			{
+				
+			}
+			else if (message.getMessageType().equalsIgnoreCase("inform"))
+			{
+				
+			}
+			else if (message.getMessageType().equalsIgnoreCase("release"))
+			{
+
+			}
+			
+			return;
+		}
+	
+	/**
+	 * Network Handler
+	 * @param message : OMF message type
+	 */
+	public void OMFNetworkHandler(OMFMessage message){
+		
+		if(message.getMessageType().equalsIgnoreCase("create"))
+		{
+			//message.OMFCreate();
+			
+			//createTopic(message.getProperty("uid"),true);
+			
+		}
+		else if (message.getMessageType().equalsIgnoreCase("configure"))
+		{
+			//message.OMFConfigure();
+			String value = (String)message.getProperty("wifi_state");
+			if (value != null) {
+				wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
+				if(value.equalsIgnoreCase("false")){
+					System.out.println("Wifi OFF");
+				}
+				else if(value.equalsIgnoreCase("true")){
+					System.out.println("Wifi ON");
+				}
+				wifiManager.setWifiEnabled(Boolean.parseBoolean(value));
+			} else {
+			    // No such key
+			}
+						
+		}
+		else if (message.getMessageType().equalsIgnoreCase("request"))
+		{
+			//message.OMFRequest();
+		}
+		else if (message.getMessageType().equalsIgnoreCase("inform"))
+		{
+			//message.OMFInform();
+		}
+		else if (message.getMessageType().equalsIgnoreCase("release"))
+		{
+			//message.OMFInform();
+		}
+		
+		return;
+	}
+		
+		
+	public void OMFMessageGenerator(Node node, String mtype, OMFMessage message, String propType){
+		UUID mid = UUID.randomUUID();							//message id
+		long timestamp = System.currentTimeMillis() / 1000L;	//timestamp
+		String src ="xmpp://"+Topic+"@"+SERVER;
+		String xmlString = null;
+		if(mtype.equalsIgnoreCase("inform") && node!=null && message.getMessageType().equals("configure")){
+			
+			xmlString = "<"+mtype+" xmlns='"+SCHEMA+"' mid='"+mid+"'" + ">" 
+						+"<src>"+src+"</src>"
+						+"<ts>"+timestamp+"</ts>"
+						+"<cid>"+message.getMessageID()+"</cid>"
+						+"<itype>"+"STATUS"+"</itype>"
+						+"<props>"
+						+"<"+ propType +" type='array' >" 
+						+"<it type='string'>"+message.getProperty(propType)+"</it>"
+						+"</"+ propType +">"
+						+"</props>"
+						+"</"+ mtype +">";
+			SimplePayload payload = new SimplePayload(mtype,SCHEMA, xmlString);
+			
+			System.out.println(xmlString);
+			
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			PayloadItem payloadItem = new PayloadItem(null, payload);
+				
+			((LeafNode)node).publish(payloadItem);
+			
+		}
+	}	
 		
 	}
 

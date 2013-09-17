@@ -9,6 +9,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ToggleButton;
 //import android.view.Menu;
@@ -36,6 +39,27 @@ public class StartUpActivity extends Activity {
 		getMenuInflater().inflate(R.menu.activity_start_up, menu);
 		return true;
 	}*/
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+	    MenuInflater inflater = getMenuInflater();
+	    inflater.inflate(R.menu.menu, menu);
+	    return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    // Handle item selection
+	    switch (item.getItemId()) {
+	        case R.id.settings:
+	        	 // START THE PongActivity
+	            Intent startActivity = new Intent(this, SettingsActivity.class);
+	            startActivity(startActivity);
+	            return true;
+	        default:
+	            return super.onOptionsItemSelected(item);
+	    }
+	}
 
 	@Override
 	protected void onDestroy() {

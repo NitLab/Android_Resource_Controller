@@ -41,13 +41,13 @@ public class XMPPParser {
 	        //Begin "reading" the XML file
 	        int eventType = xpp.getEventType();
 	         while (eventType != XmlPullParser.END_DOCUMENT) {
-	        	 if(eventType == XmlPullParser.START_TAG && (xpp.getName().equalsIgnoreCase("request") || xpp.getName().equalsIgnoreCase("configure") || xpp.getName().equalsIgnoreCase("create")))
+	        	 if(eventType == XmlPullParser.START_TAG && (xpp.getName().equalsIgnoreCase("request") || xpp.getName().equalsIgnoreCase("inform") || xpp.getName().equalsIgnoreCase("configure") || xpp.getName().equalsIgnoreCase("create") || xpp.getName().equalsIgnoreCase("release")))
 	        	 {   //System.out.println("Message:"+xpp.getName());
 	        		 //OMFMessage.put("message", xpp.getName());
 	        		 message.setMessageType(xpp.getName());
 	        		 message.setMessageID(xpp.getAttributeValue(null, "mid"));
 	        		 
-	        		 while( !((eventType == XmlPullParser.END_TAG) && (xpp.getName().equalsIgnoreCase("request") || xpp.getName().equalsIgnoreCase("configure") || xpp.getName().equalsIgnoreCase("create"))))
+	        		 while( !((eventType == XmlPullParser.END_TAG) && (xpp.getName().equalsIgnoreCase("request") || xpp.getName().equalsIgnoreCase("inform") || xpp.getName().equalsIgnoreCase("configure") || xpp.getName().equalsIgnoreCase("create") || xpp.getName().equalsIgnoreCase("release"))))
 	        		 {
 	        			 if(eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase("props"))
         				 {

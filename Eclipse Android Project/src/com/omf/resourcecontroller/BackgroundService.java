@@ -47,6 +47,10 @@ public class BackgroundService extends Service implements Constants{
 	//TopicName
 	private String topicName = null;
 	
+	
+	 
+	 
+	 
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
@@ -64,9 +68,15 @@ public class BackgroundService extends Service implements Constants{
 		notificationMgr = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		
 		// TelephonyMgr
-		telephonyMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);;
+		telephonyMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+		
+		
+		
 		topicName = telephonyMgr.getDeviceId();
+		
 		UnamePass = "android.omf."+topicName;
+		
+		
 		
 		/////////////	THREAD POLICY
 		
@@ -114,6 +124,9 @@ public class BackgroundService extends Service implements Constants{
 		//test.start();
 		
 		test.XMPPCreateConnection();
+		displayNotificationMessage("XMPP started");
+		Log.i(TAG,"XMPP started");
+		
 		
 	}
 	

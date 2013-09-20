@@ -1,8 +1,16 @@
+/* Copyright (c) 2013 NITLab, University of Thessaly, Greece
+ * This software may be used and distributed solely under the terms of the MIT license (License).
+ * You should find a copy of the License in LICENSE.TXT or at http://opensource.org/licenses/MIT.
+ * By downloading or using this software you accept the terms and the liability disclaimer in the License.
+*/
+
 package com.omf.resourcecontroller.parser;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -61,20 +69,23 @@ public class XMPPParserV2 {
         					 flag=false;
         				 }
 	        			 
-	        			 
-	        			 
 	        			 if(eventType == XmlPullParser.START_TAG)
 	        			 {
 	        				 try{
 	        					 if(flag)
 	        					 {
+	        						 //System.out.println("Prop "+xpp.getName()+": "+xpp.nextText());
+	        						 //OMFMessage.put("prop"+xpp.getName(), xpp.nextText());
 	        						 //message.setProperty(xpp.getName(), xpp.nextText());
-	        						message.setPropertiesHashmap( properties(xpp, eventType));
-	        						//message.setPropertiesTypesHashmap(propertiesTypes(xpp, eventType));
+	        						 message.setPropertiesHashmap(properties(xpp, eventType, "props"));
+	        						 eventType = XmlPullParser.END_TAG;
+	        						 //flag=false;
+	        						 //xpp.nextText();
 	        					 }
 	        					 else
 	        					 {
-	        						 
+	        						 //System.out.println(xpp.getName()+": "+xpp.nextText());
+	        						 //OMFMessage.put(xpp.getName(),xpp.nextText());
 	        						 if(xpp.getName().equalsIgnoreCase("src"))
 	        						 {
 	        							 message.setSrc(xpp.nextText());
@@ -97,7 +108,7 @@ public class XMPPParserV2 {
 	        			 		if(xpp.getName().equalsIgnoreCase("props")){
 		        					 flag=true;
 		        				 }
-								//eventType = xpp.next(); 
+								eventType = xpp.next(); 
 							 }
 	        			 }
 	        			 else
@@ -116,94 +127,98 @@ public class XMPPParserV2 {
 		return message;
 	}
 	
-	private HashMap<String, Object> properties(XmlPullParser parser , int eType) throws XmlPullParserException, IOException{
+	private HashMap<String, Object> properties(XmlPullParser parser , int eType, String stopClause) throws XmlPullParserException, IOException{
 		
 		HashMap<String, Object> props = new HashMap<String, Object>();
-		String startTag = parser.getName();
+		
 		int eventType = eType;
-		
-		eventType = parser.next();
-		System.out.println("Im in!");
-		while(!((eventType == XmlPullParser.END_TAG) && (xpp.getName().equalsIgnoreCase(startTag)))){
-			System.out.println("Im in the loop !");
-			if(parser.getAttributeValue(null, "type").equalsIgnoreCase("hash"))
-			{
-				System.out.println("Im in the first if !");
-				props.put("#hash#"+parser.getName(),properties(parser, eventType));
-			}
-			else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("array"))
-			{
-				System.out.println("Im in the second if !");
-				//props.put(parser.getName(),properties(parser, eventType));
-			}
-			else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("integer"))
-			{
-				System.out.println("Im in the third if !");
-				try {
-					props.put("#integer#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
-				} catch (XmlPullParserException e) {
-					
-				} catch (IOException e) {
-					
-				}
-			}
-			else
-			{	System.out.println("im in else !");
-				try {
-					props.put("#string#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
-				} catch (XmlPullParserException e) {
-					
-				} catch (IOException e) {
-					
-				}
-			}
+		String parserPrev = null;
+
+		System.out.println("################################Properties##################################");
+		//for(int i=0; i<8;i++){
 			
-			eventType = parser.next();
-		}
-		System.out.println("im done !");
-		xpp = parser;
-		return props;
-		
-	}
-	/*
-	private HashMap<String, String> propertiesTypes(XmlPullParser parser, int eType){
-		
-		HashMap<String, String> propTypes = new HashMap<String, String>();
-		
-		String startTag = parser.getName();
-		int eventType = eType;
-		
-		eventType = parser.next();
-		
-		while(!((eventType == XmlPullParser.END_TAG) && (xpp.getName().equalsIgnoreCase(startTag)))){
-			if(parser.getAttributeValue(null, "type").equalsIgnoreCase("hash"))
-			{
-				propTypes.put(parser.getName(),propertiesTypes(parser, eventType));
-			}
-			else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("array"))
-			{
-				propTypes.put(parser.getName(),propertiesTypes(parser, eventType));
-			}
-			else
-			{
-				try {
-					propTypes.put(parser.getName(), parser.nextText());		//String,Symbol,Integer
-				} catch (XmlPullParserException e) {
-					
-				} catch (IOException e) {
-					
-				}
-			}
+		while((!(eventType == XmlPullParser.END_TAG) && !parser.getName().equalsIgnoreCase(stopClause))){
 			
-			eventType = parser.next();
+				//System.out.println("####im in else !");
+				
+			System.out.println("####Im in the loop ! ");
+				if(eventType == XmlPullParser.START_TAG)
+				{
+					if(parser.getAttributeValue(null, "type")!=null)
+					{
+						if(parser.getAttributeValue(null, "type").equalsIgnoreCase("hash"))
+						{
+							System.out.println("Im in the first if !");
+							parserPrev = parser.getName();
+							parser.next();
+							props.put("#hash#"+parserPrev,properties(parser, eventType, parserPrev)); //recursive function
+						}
+						else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("array"))
+						{
+							System.out.println("Im in the second if !");
+							List<String> list = new ArrayList<String>();
+							parserPrev = parser.getName();
+							parser.next();
+							while(!(eventType == XmlPullParser.END_TAG) && (!parser.getName().equalsIgnoreCase(parserPrev))){
+								if(eventType == XmlPullParser.START_TAG){
+									try {
+										list.add(parser.nextText());
+									} catch (XmlPullParserException e) {
+										
+									} catch (IOException e) {
+			
+									}
+								}
+								eventType = parser.next();
+							}
+							props.put("#array#"+parserPrev,list);
+						}
+						else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("integer"))
+						{
+							System.out.println("Im in the third if !");
+							try {
+								props.put("#integer#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
+							} catch (XmlPullParserException e) {
+	
+							} catch (IOException e) {
+	
+							}
+						}
+						else
+						{	System.out.println("im in else !");
+							try {
+								props.put("#string#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
+							} catch (XmlPullParserException e) {
+	
+							} catch (IOException e) {
+	
+							}
+						}
+					}
+					else
+					{	System.out.println("Attribute type doesnt exist...treat everything as a string");
+						try {
+							props.put("#string#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
+						} catch (XmlPullParserException e) {
+
+						} catch (IOException e) {
+
+						}
+					}
+				}
+	
+
+				if(parser.getName().equalsIgnoreCase("props")){
+					System.out.println("BREAK");
+					xpp = parser;
+					return props;
+				}
+				//System.out.println(parser.nextText());
+				eventType = parser.next();
 		}
-		
-	
-		//finished set global xpp where parser was left
+
 		xpp = parser;
-		return propTypes;
+		return props;	
 	}
-	*/
-	
 }
 

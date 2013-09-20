@@ -1,3 +1,9 @@
+/* Copyright (c) 2013 NITLab, University of Thessaly, Greece
+ * This software may be used and distributed solely under the terms of the MIT license (License).
+ * You should find a copy of the License in LICENSE.TXT or at http://opensource.org/licenses/MIT.
+ * By downloading or using this software you accept the terms and the liability disclaimer in the License.
+*/
+
 package com.omf.resourcecontroller.OMF;
 
 import java.io.IOException;
@@ -60,7 +66,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		private XMPPConnection xmpp = null;
 		
 		//XMPP Parser 
-		private XMPPParser parser = null;
+		//private XMPPParser parser = null;
 		private XMPPParserV2 parser2 = null;
 		//OMF message object
 		private OMFMessage omfMessage = null;
@@ -359,7 +365,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 	        @Override
 	        public void handlePublishedItems(ItemPublishEvent <PayloadItem> items)
 	        {
-	        	parser = new XMPPParser();
+	        	//parser = new XMPPParser();
 	        	try {
 					parser2 = new XMPPParserV2();
 				} catch (XmlPullParserException e1) {
@@ -371,11 +377,11 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					if(!items.isDelayed())
 					{
 						try {
-			        		omfMessage = parser.XMLParse(item.toXML());
-			        		Log.e(TAG, "Reached this far!!!!!!!!!!");
-			        		System.out.println(omfMessage.toString());
-			        		Log.e(TAG, "Reached this far2!!!!!!!!!!");
-			        		System.out.println("parser2: " + parser2.XMLParse(item.toXML()).toString());
+			        		//omfMessage = parser.XMLParse(item.toXML());
+			        		omfMessage = parser2.XMLParse(item.toXML());
+			        		//System.out.println(omfMessage.toString());
+			        		
+			        		//System.out.println("parser2: " + parser2.XMLParse(item.toXML()).toString());
 			        		
 			        		System.out.println(item.toString());
 			        		if(!omfMessage.isEmpty())

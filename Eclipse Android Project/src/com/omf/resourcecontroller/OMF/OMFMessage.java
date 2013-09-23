@@ -18,6 +18,7 @@ public class OMFMessage {
 	HashMap<String, Object> properties;
 	HashMap<String, String> propertyTypes;
 	private String type;
+	private String cid;
 	
 	
 	//Constructor 

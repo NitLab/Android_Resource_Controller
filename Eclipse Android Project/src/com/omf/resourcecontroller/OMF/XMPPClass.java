@@ -9,7 +9,6 @@ package com.omf.resourcecontroller.OMF;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 import org.jivesoftware.smack.AccountManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
@@ -22,12 +21,10 @@ import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.FormType;
 import org.jivesoftware.smackx.pubsub.ItemPublishEvent;
-import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
 import org.jivesoftware.smackx.pubsub.PubSubManager;
 import org.jivesoftware.smackx.pubsub.PublishModel;
-import org.jivesoftware.smackx.pubsub.SimplePayload;
 import org.jivesoftware.smackx.pubsub.listener.ItemEventListener;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -36,7 +33,7 @@ import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import com.omf.resourcecontroller.Constants;
-import com.omf.resourcecontroller.parser.XMPPParser;
+import com.omf.resourcecontroller.XMLgenerator.XMLGenerator;
 import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 /**
@@ -70,7 +67,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		private XMPPParserV2 parser2 = null;
 		//OMF message object
 		private OMFMessage omfMessage = null;
-		
+
 		
 		//Node and Node Listener HashMap
 		HashMap<String, ItemEventCoordinator> NodeListeners;
@@ -420,6 +417,10 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		        					System.out.println(omfMessage.toString());
 		        				}
 			        		}
+			        		else
+			        		{
+			        			Log.e(TAG, "Something went wrong, OMF Message is empty");
+			        		}
 						} catch (XmlPullParserException e) {
 							Log.e(TAG,"PullParser exception");
 						} catch (IOException e) {
@@ -467,6 +468,9 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		
 		public void OMFMainHandler(OMFMessage message){
 			
+			//XML Generator for the MainHandler
+			XMLGenerator xmlGen = new XMLGenerator();
+			
 			if(message.getMessageType().equalsIgnoreCase("create"))
 			{
 				//message.OMFCreate();
@@ -482,11 +486,11 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					System.out.println("test");
 					//Send Inform to main topic
 					Node mainNode = Nodes.get(Topic);
-					OMFMessageGenerator(mainNode, "inform", message, "membership");
+					xmlGen.OMFMessageGenerator(mainNode, "inform", message, "membership", Topic);
 					
 					//Subscribe to membership, or create the topic
 					newNode = createTopic(membership,false,"");
-					OMFMessageGenerator(newNode, "inform", message, "membership");
+					xmlGen.OMFMessageGenerator(newNode, "inform", message, "membership", Topic);
 					
 				}
 			}
@@ -554,35 +558,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 	}
 		
 		
-	public void OMFMessageGenerator(Node node, String mtype, OMFMessage message, String propType){
-		UUID mid = UUID.randomUUID();							//message id
-		long timestamp = System.currentTimeMillis() / 1000L;	//timestamp
-		String src ="xmpp://"+Topic+"@"+SERVER;
-		String xmlString = null;
-		if(mtype.equalsIgnoreCase("inform") && node!=null && message.getMessageType().equals("configure")){
-			
-			xmlString = "<"+mtype+" xmlns='"+SCHEMA+"' mid='"+mid+"'" + ">" 
-						+"<src>"+src+"</src>"
-						+"<ts>"+timestamp+"</ts>"
-						+"<cid>"+message.getMessageID()+"</cid>"
-						+"<itype>"+"STATUS"+"</itype>"
-						+"<props>"
-						+"<"+ propType +" type='array' >" 
-						+"<it type='string'>"+message.getProperty(propType)+"</it>"
-						+"</"+ propType +">"
-						+"</props>"
-						+"</"+ mtype +">";
-			SimplePayload payload = new SimplePayload(mtype,SCHEMA, xmlString);
-			
-			System.out.println(xmlString);
-			
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			PayloadItem payloadItem = new PayloadItem(null, payload);
-				
-			((LeafNode)node).publish(payloadItem);
-			
-		}
-	}	
+		
 		
 	}
 

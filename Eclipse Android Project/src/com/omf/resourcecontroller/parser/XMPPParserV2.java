@@ -16,10 +16,13 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import android.util.Log;
+
+import com.omf.resourcecontroller.Constants;
 import com.omf.resourcecontroller.OMF.OMFMessage;
 import com.omf.resourcecontroller.OMF.PropType;
 
-public class XMPPParserV2 {
+public class XMPPParserV2 implements Constants {
 	/**
 	 * XML Parser
 	 * @param XMLstring : XML String 
@@ -27,28 +30,26 @@ public class XMPPParserV2 {
 	 * @throws XmlPullParserException 
 	 * @returns OMFMessage: HashMap that contains XML element names as keys and their values
 	 */
-	public static final String TAG = "BackgroundService";
+	public static final String TAG = "XML Paser";
 	
 	private XmlPullParserFactory factory= null;
-	boolean flag  = false;
+	boolean props = false;			//flag for properties
+	boolean guard = false;			//flag for guard
 	OMFMessage message = null;
 	XmlPullParser xpp = null;
-	
 	
 	public XMPPParserV2() throws XmlPullParserException{
 		
 		factory = XmlPullParserFactory.newInstance();
-		flag  = false;
-		
-		//OMFMessage
-		message  = new OMFMessage();
-		
-		factory.setNamespaceAware(true);
+		props = false; 						//flag for properties
+		guard = false;						//flag for guard
+		message  = new OMFMessage();		//OMFMessage
+		factory.setNamespaceAware(true);	//XMPP pull parser factory set namespace
 		xpp = factory.newPullParser();
 	}
 	
 	
-	public OMFMessage XMLParse (String XMLstring) throws XmlPullParserException, IOException{
+	public OMFMessage XMLParse (String XMLstring)  throws XmlPullParserException, IOException{
 			
 	        
 	        //Set input
@@ -56,9 +57,16 @@ public class XMPPParserV2 {
 	        
 	        //Begin "reading" the XML file
 	        int eventType = xpp.getEventType();
-	         while (eventType != XmlPullParser.END_DOCUMENT) {
+	         while (eventType != XmlPullParser.END_DOCUMENT) 
+	         {
 	        	 if(eventType == XmlPullParser.START_TAG && (xpp.getName().equalsIgnoreCase("request") || xpp.getName().equalsIgnoreCase("inform") || xpp.getName().equalsIgnoreCase("configure") || xpp.getName().equalsIgnoreCase("create") || xpp.getName().equalsIgnoreCase("release")))
 	        	 {   
+	        		 
+	        		 if(!xpp.getNamespace().equals(SCHEMA))
+	        		 {//SCHEMA doesnt comply with OMF 6.0 Protocol
+	        			 Log.e(TAG,"ERROR: Not OMF 6.0 message");
+	        			 return message; //return empty message
+	        		 }
 	        		 //get message id and message type
 	        		 message.setMessageType(xpp.getName());
 	        		 message.setMessageID(xpp.getAttributeValue(null, "mid"));
@@ -67,26 +75,30 @@ public class XMPPParserV2 {
 	        		 {
 	        			 if(eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase("props"))
         				 {
-        					 flag=false;
+        					 props=false;
+        				 }
+	        			 
+	        			 if(eventType == XmlPullParser.END_TAG && xpp.getName().equalsIgnoreCase("guard"))
+        				 {
+        					 guard=false;
         				 }
 	        			 
 	        			 if(eventType == XmlPullParser.START_TAG)
 	        			 {
 	        				 try{
-	        					 if(flag)
+	        					 if(props) // only one of props or guard should be enabled at any given time
 	        					 {
-	        						 //System.out.println("Prop "+xpp.getName()+": "+xpp.nextText());
-	        						 //OMFMessage.put("prop"+xpp.getName(), xpp.nextText());
-	        						 //message.setProperty(xpp.getName(), xpp.nextText());
 	        						 message.setPropertiesHashmap(properties(xpp, eventType, "props",xpp.getDepth()-1));
 	        						 eventType = XmlPullParser.END_TAG;
-	        						 //flag=false;
-	        						 //xpp.nextText();
+	        					 }
+	        					 else if(guard)
+	        					 {
+	        						 //guard and props have the same structure so i use the same funtion to parse it
+	        						 message.setGuardHashmap(properties(xpp, eventType, "guard",xpp.getDepth()-1));
+	        						 eventType = XmlPullParser.END_TAG;
 	        					 }
 	        					 else
 	        					 {
-	        						 //System.out.println(xpp.getName()+": "+xpp.nextText());
-	        						 //OMFMessage.put(xpp.getName(),xpp.nextText());
 	        						 if(xpp.getName().equalsIgnoreCase("src"))
 	        						 {
 	        							 message.setSrc(xpp.nextText());
@@ -95,36 +107,52 @@ public class XMPPParserV2 {
 	        						 {
 	        							 message.setTs(Long.parseLong(xpp.nextText(),10));
 	        						 }
+	        						 else if(xpp.getName().equalsIgnoreCase("cid"))
+	        						 {
+	        							 message.setCid(xpp.nextText());
+	        						 }
+	        						 else if(xpp.getName().equalsIgnoreCase("res_id"))
+	        						 {
+	        							 message.setResID(xpp.nextText());
+	        						 }
+	        						 else if(xpp.getName().equalsIgnoreCase("reason"))
+	        						 {
+	        							 message.setReason(xpp.nextText());
+	        						 }
 	        						 else if(xpp.getName().equalsIgnoreCase("itype") || xpp.getName().equalsIgnoreCase("rtype"))
 	        						 {
 	        							 message.setType(xpp.nextText());
 	        						 }
 	        						 else
 	        						 {
-	        							 xpp.nextText();
+	        							 xpp.nextText(); 
 	        						 }
 	        					 }
 	        				 }
 	        			 	 catch (XmlPullParserException e) {
 	        			 		if(xpp.getName().equalsIgnoreCase("props")){
-		        					 flag=true;
-		        				 }
+		        					 props=true;
+		        				} 		
 								eventType = xpp.next(); 
 							 }
 	        			 }
 	        			 else
 	        			 {
-	        				 eventType = xpp.next(); 
+	        				eventType = xpp.next(); 
+	        				 
+	        				if(xpp.getName().equalsIgnoreCase("guard"))
+	        			 	{
+	        			 			guard = true;
+	        			 			eventType = xpp.next();
+	        			 	}
 	        			 } 
 	        		 }
-
 	        	 }
 	        	 else
 	        	 {
 	        		 eventType = xpp.next();
 	        	 }
-	         }
-	         
+	         }    
 		return message;
 	}
 	
@@ -135,32 +163,20 @@ public class XMPPParserV2 {
 		int eventType = eType;
 		String parserPrev = null;
 		int depthForList;
-		System.out.println("################################Properties##################################");
-		//for(int i=0; i<8;i++){
-		System.out.println("eksw apo tn loop " +initialDepth);
-		System.out.println("eksw apo tn loop2 " +parser.getDepth());
+		
 		while(!((eventType == XmlPullParser.END_TAG) && parser.getName().equalsIgnoreCase(stopClause)) && initialDepth!=parser.getDepth()){
-			
-				//System.out.println("####im in else !");
-				
-			System.out.println("####Im in the loop ! ");
-			System.out.println(initialDepth);
-			System.out.println(parser.getDepth());
 				if(eventType == XmlPullParser.START_TAG)
 				{
 					if(parser.getAttributeValue(null, "type")!=null)
 					{
 						if(parser.getAttributeValue(null, "type").equalsIgnoreCase("hash"))
 						{
-							System.out.println("Im in the first if !");
 							parserPrev = parser.getName();
 							parser.next();
-							//props.put("#hash#"+parserPrev,properties(parser, eventType, parserPrev)); //recursive function
 							props.put(parserPrev, new PropType(properties(parser, eventType, parserPrev, parser.getDepth()-1),"hash"));
 						}
 						else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("array"))
 						{
-							System.out.println("Im in the second if !");
 							List<String> list = new ArrayList<String>();
 							parserPrev = parser.getName();
 							depthForList = parser.getDepth();
@@ -170,65 +186,48 @@ public class XMPPParserV2 {
 									try {
 										list.add(parser.nextText());
 									} catch (XmlPullParserException e) {
-										
 									} catch (IOException e) {
-			
 									}
 								}
 								eventType = parser.next();
 							}
-							//props.put("#array#"+parserPrev,list);
 							props.put(parserPrev, new PropType(list,"array"));
 						}
 						else if(parser.getAttributeValue(null, "type").equalsIgnoreCase("integer"))
 						{
-							System.out.println("Im in the third if !");
 							try {
-								//props.put("#integer#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
 								props.put(parser.getName(), new PropType(parser.nextText(),"integer"));
 							} catch (XmlPullParserException e) {
-	
 							} catch (IOException e) {
-	
 							}
 						}
 						else
-						{	System.out.println("im in else !");
+						{	
 							try {
-								//props.put("#string#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
-								props.put(parser.getName(), new PropType(parser.nextText(),"string"));
+								props.put(parser.getName(), new PropType(parser.nextText(),"string")); //String,Symbol
 							} catch (XmlPullParserException e) {
-	
 							} catch (IOException e) {
-	
 							}
 						}
 					}
 					else
-					{	System.out.println("Attribute type doesnt exist...treat everything as a string");
+					{	
 						try {
-							//props.put("#string#"+parser.getName(), parser.nextText());		//String,Symbol,Integer
-							props.put(parser.getName(), new PropType(parser.nextText(),"string"));
+							props.put(parser.getName(), new PropType(parser.nextText(),"string")); //String,Symbol,Integer if attributes dont exist
 						} catch (XmlPullParserException e) {
-
 						} catch (IOException e) {
-
 						}
 					}
 				}
-	
 
 				if(parser.getName().equalsIgnoreCase("props") && initialDepth==parser.getDepth()){
 					System.out.println("BREAK");
 					xpp = parser;
 					return props;
 				}
-				//System.out.println(parser.nextText());
 				eventType = parser.next();
 		}
-		System.out.println("return########");
 		xpp = parser;
 		return props;	
 	}
 }
-

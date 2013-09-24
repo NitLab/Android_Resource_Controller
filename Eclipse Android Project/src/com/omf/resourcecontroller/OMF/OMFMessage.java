@@ -16,9 +16,11 @@ public class OMFMessage {
 	private long ts;
 	private String src;
 	HashMap<String, Object> properties;
-	HashMap<String, String> propertyTypes;
+	HashMap<String, Object> guard;
 	private String type;
 	private String cid;
+	private String resID;
+	private String reason;
 	
 	
 	//Constructor 
@@ -28,7 +30,11 @@ public class OMFMessage {
 		ts = 1234567890L;
 		src = null;
 		type = null;
+		cid = null;
+		resID = null;
+		reason = null;
 		properties = new HashMap<String, Object>();
+		guard = new HashMap<String, Object>();
 	}
 	//Message type
 	public void setMessageType(String MessageType){
@@ -65,6 +71,35 @@ public class OMFMessage {
 	public String getSrc(){
 		return this.src;
 	}
+	
+	
+	//cid if it exists
+	public void setCid(String Cid){
+		this.cid = Cid;
+	}
+		
+	public String getCid(){
+		return this.cid;
+	}
+	
+	//resID if it exists
+	public void setResID(String ResID){
+		this.resID = ResID;
+	}
+			
+	public String getResID(){
+		return this.resID;
+	}
+	
+	//reason if it exists
+	public void setReason(String Reason){
+		this.reason = Reason;
+	}
+				
+	public String getReason(){
+		return this.reason;
+	}
+	
 	//Set type if type exists
 	public void setType(String Type){
 		this.type = Type;
@@ -79,27 +114,27 @@ public class OMFMessage {
 		this.properties.put(key, value);
 	}
 	
-	public void setPropertyType(String key, String value){
-		this.propertyTypes.put(key, value);
+	public void setGuard(String key, String value){
+		this.guard.put(key, value);
 	}
 	
 	public void setPropertiesHashmap(HashMap<String, Object> properties){
 		this.properties = properties;
 	}
 	
-	public void setPropertiesTypesHashmap(HashMap<String, String> propertiesTypes){
-		this.propertyTypes = propertiesTypes;
+	public void setGuardHashmap(HashMap<String, Object> Guard){
+		this.guard = Guard;
 	}
 	
 	
-	public HashMap<String, Object> getProperties(){
+	public HashMap<String, Object> getPropertiesHashmap(){
 		
 		return this.properties;
 	}
 	
-	public HashMap<String, String> getPropertyTypes(){
+	public HashMap<String, Object> getGuardHashmap(){
 		
-		return this.propertyTypes;
+		return this.guard;
 	}
 	
 	
@@ -107,8 +142,8 @@ public class OMFMessage {
 		return this.properties.get(key);
 	}
 	
-	public String getPropertyType(String key){
-		return this.propertyTypes.get(key);
+	public Object getGuard(String key){
+		return this.guard.get(key);
 	}
 	
 	
@@ -118,12 +153,24 @@ public class OMFMessage {
 					"Source: "+src+"\n"+
 					"Timestamp: "+Long.toString(ts)+"\n"+
 					"Properties: "+properties.toString()+"\n";
-					
+		
+		
+		if(!guard.isEmpty())
+			s+="Guard: "+guard.toString()+"\n";
+		
+		if(cid!=null)
+			s+="Cid: "+cid+"\n";
 					
 		if(messageType.equalsIgnoreCase("inform") || messageType.equalsIgnoreCase("release"))
 			s+="Itype: "+type+"\n";
 		else if(messageType.equalsIgnoreCase("create"))
 			s+="Rtype: "+type+"\n";
+		
+		if(resID!=null)
+			s+="Res ID: "+resID+"\n";
+		
+		if(reason!=null)
+			s+="Reason: "+reason+"\n";
 		
 		return s;
 	}

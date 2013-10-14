@@ -3,6 +3,7 @@
  * You should find a copy of the License in LICENSE.TXT or at http://opensource.org/licenses/MIT.
  * By downloading or using this software you accept the terms and the liability disclaimer in the License.
 */
+//This parser is wrong!!!
 
 package com.omf.resourcecontroller.parser;
 
@@ -14,7 +15,11 @@ import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import com.omf.resourcecontroller.OMF.OMFMessage;
-
+/**
+ * Wrong parser
+ * @author Polychronis Symeonidis
+ *
+ */
 public class XMPPParser {
 	/**
 	 * XML Parser

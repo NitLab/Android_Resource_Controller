@@ -52,7 +52,12 @@ public final class R {
     public static final class string {
         public static final int app_name=0x7f040000;
         public static final int app_notification_id=0x7f040002;
-        /**  BUTTONS 
+        /**  STYLES 
+  <style name="SwitchTextAppearance" parent="@android:style/TextAppearance.Holo.Small">
+    	<item name="android:textColor">@color/white</item>
+	</style>
+	
+ BUTTONS 
          */
         public static final int btn_id=0x7f040004;
         public static final int btn_service_start=0x7f040005;
@@ -94,13 +99,10 @@ public final class R {
     
  API 14 theme customizations can go here. 
          */
-        public static final int AppBaseTheme=0x7f060001;
+        public static final int AppBaseTheme=0x7f060000;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static final int AppTheme=0x7f060002;
-        /**  STYLES 
-         */
-        public static final int SwitchTextAppearance=0x7f060000;
+        public static final int AppTheme=0x7f060001;
     }
 }

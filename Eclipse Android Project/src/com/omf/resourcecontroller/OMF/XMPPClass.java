@@ -6,12 +6,16 @@
 
 package com.omf.resourcecontroller.OMF;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import org.jivesoftware.smack.AccountManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackAndroid;
 import org.jivesoftware.smack.XMPPConnection;
@@ -29,7 +33,7 @@ import org.jivesoftware.smackx.pubsub.listener.ItemEventListener;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.content.Context;
-import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.util.Log;
 
 import com.omf.resourcecontroller.Constants;
@@ -37,8 +41,9 @@ import com.omf.resourcecontroller.XMLgenerator.XMLGenerator;
 import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 /**
- * 
- * XMPPClass
+ * XMPPClass object : the object that has all the informations and all the functions to create an xmpp connection 
+ * and a main topic and listen to it
+ * @author Polychronis Symeonidis
  *
  */
 
@@ -65,53 +70,83 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		//XMPP Parser 
 		//private XMPPParser parser = null;
 		private XMPPParserV2 parser2 = null;
-		//OMF message object
-		private OMFMessage omfMessage = null;
-
+		
+		private MessagePublisher msgPub;
 		
 		//Node and Node Listener HashMap
-		HashMap<String, ItemEventCoordinator> NodeListeners;
-		HashMap<String, Node> Nodes;
+		private HashMap<String, ItemEventCoordinator> NodeListeners;
+		private HashMap<String, Node> Nodes;
+		
+		private String serverName;
 		
 		//flag
 		private boolean flag;
 		
-		//Device Managers
-		WifiManager wifiManager = null;
 		
-
-		/**
-		 * Constructor
-		 */
-		//public XMPPConnectThread(){
-			
-			// Create thread in here
-			//conthread = new XMPPConnectThread("XMPP thread");
-		//	NodeListeners = new HashMap<String, ItemEventCoordinator>();
-		//	Nodes = new HashMap<String, Node>();
-		//}
 		
-		public XMPPClass(String username, String password, String topicName, Context appContext){
+		
+	
+	/**
+	 * XMPPClass Constructor
+	 * @param username : XMPP server username
+	 * @param password : XMPP server password
+	 * @param topicName : XMPP main topic name (RC topic name)
+	 * @param Server : XMPP Server name
+	 * @param appContext : The application context
+	 */
+		public XMPPClass(String username, String password, String topicName, String Server, Context appContext){
 			
-			//conthread = new XMPPConnectThread("XMPP thread");
 			NodeListeners = new HashMap<String, ItemEventCoordinator>();
 			Nodes = new HashMap<String, Node>();
+			
 			Username = username;
 			Password = password;
 			Topic = topicName;
 			ctx = appContext;
 			flag = true;
 			
+			serverName = Server;
+			
+			msgPub = new MessagePublisher();
+			
+			//Init aSmack
+			SmackAndroid.init(ctx);
+			
+			//Set the reply timeout of asmack in ms to avoid server not responding fast enough if busy
+			//SmackConfiguration.setPacketReplyTimeout(10000);
+
+			// XMPP CONNECTION		
+			connConfig = new ConnectionConfiguration(serverName,PORT);
+			
+			connConfig.setSASLAuthenticationEnabled(true);
+			connConfig.setCompressionEnabled(true);
+			connConfig.setSecurityMode(SecurityMode.enabled);
+			
+			//Connection configuration - generates a warning on startup because the truststore path is set to null
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+				connConfig.setTruststoreType("AndroidCAStore");
+				connConfig.setTruststorePassword(null);
+				connConfig.setTruststorePath(null);
+			} else {
+				connConfig.setTruststoreType("BKS");
+			    String path = System.getProperty("javax.net.ssl.trustStore");
+			    if (path == null)
+			        path = System.getProperty("java.home") + File.separatorChar + "etc"
+			            + File.separatorChar + "security" + File.separatorChar
+			            + "cacerts.bks";
+			    connConfig.setTruststorePath(path);
+			}
+			
+			xmpp = new XMPPConnection(connConfig);
 			
 		}
 		
+		/**
+		 * XMPPCreateConnection 
+		 * @return XMPPConncection xmpp: xmpp connection variable
+		 */
 		public XMPPConnection XMPPCreateConnection(){
-			//Init aSmack
-			SmackAndroid.init(ctx);
-			//SmackConfiguration.setDefaultPingInterval(100);	
-			// XMPP CONNECTION
-			connConfig = new ConnectionConfiguration(SERVER,PORT);
-			xmpp = new XMPPConnection(connConfig);
+
 			
 			//Open XMPP Connection
 			try{
@@ -120,42 +155,48 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					Log.i(TAG,"XMPP connected");
 			}catch(XMPPException e){
 				Log.e(TAG, "XMPP connection failed");
-				Log.d(TAG, "Check device connectivity");
-				xmpp = null;
+				Log.d(TAG, "Check device connectivity or server name");
+				//xmpp = null;
+				return null;
 			}
 			
 			//Add connection listener
 			if(xmpp.isConnected()){
 				connectionListener = new XMPPConnectionListener();
 				xmpp.addConnectionListener(connectionListener);
+						
+				//Add ping manager to deal with disconnections (after 6 minutes idle, xmpp disconnects)
+				PingManager.getInstanceFor(xmpp).setPingIntervall(5*60*1000);	//5 minutes (5*60*1000 in millisecons)
+
+				//Do Login
+				XMPPLogin(xmpp,Username,Password);
+				
+				//If xmpp is logged in declare your presence
+				if(xmpp.isAuthenticated()){
+					//Declare presence
+					Presence presence = new Presence(Presence.Type.available);
+					xmpp.sendPacket(presence);
+				}
+				
+				//Add pubsub manager
+				if(xmpp.isAuthenticated())
+				{
+					pubmgr = new PubSubManager(xmpp);
+				}
+				//CreateTopic
+				createTopic(Topic, false, "main", Topic, null, null);
+				return xmpp;
 			}
-			
-			//Add ping manager to deal with disconnections (after 6 minutes idle, xmpp disconnects)
-			PingManager.getInstanceFor(xmpp).setPingIntervall(5*60*1000);	//5 minutes (5*60*1000 in millisecons)
-			
-			
-			
-			//Do Login
-			XMPPLogin(xmpp,Username,Password);
-			
-			//If xmpp is logged in declare your presence
-			if(xmpp.isAuthenticated()){
-				//Declare presence
-				Presence presence = new Presence(Presence.Type.available);
-				xmpp.sendPacket(presence);
-			}
-			
-			//Add pubsub manager
-			if(xmpp.isAuthenticated())
-			{
-				pubmgr = new PubSubManager(xmpp);
-			}
-			//CreateTopic
-			createTopic(Topic, false, "main");
-	
-			return xmpp;
+			return null;//new
 		}
 		
+		/**
+		 * 
+		 * @param Xmpp : XMPPConnection variable
+		 * @param username : username for the login
+		 * @param pass : password for the login
+		 * @return true or false : true if login has succeeded false otherwise
+		 */
 		public boolean XMPPLogin(XMPPConnection Xmpp, String username,String pass){
 			
 			if(Xmpp.isConnected()){
@@ -189,10 +230,24 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		}
 		
 		
-		
-		public Node createTopic(String topicName , boolean isProxy, String rType){
+		/**
+		 * Create Topic
+		 * @param topicName : topic name
+		 * @param isProxy : if it is a resource proxy
+		 * @param rType : The resource type of the topic, null if it is the main topic
+		 * @param destinationName : where the topic replys
+		 * @param list : a list with all the memberships
+		 * @param properties : topic properties , if it is the main topic the properties are null
+		 * @return Node node: if creation succesfull otherwise returns null
+		 */
+		public Node createTopic(String topicName , boolean isProxy, String rType, String destinationName, List<String> list, HashMap<String, Object> properties){
 			
 			if(xmpp.isAuthenticated()){
+				
+				//Add pubsub manager
+					
+					//pubmgr = new PubSubManager(xmpp);
+				
 					//New node
 					Node eventNode = null;
 					//New node listener
@@ -210,22 +265,24 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					f.setSubscribe(true);						//true
 					
 					try{
+						Log.i(TAG, "Going to create node: "+topicName);
 						eventNode = pubmgr.getNode(topicName);
 						//Put node to hashmap
 						Nodes.put(topicName,eventNode);
 					}catch(XMPPException e){
-						//e.printStackTrace();
+						e.printStackTrace();
 						Log.e(TAG, "Problem getting node "+ topicName);
 						//If node doesn't exist create it
 						try {
 							Log.i(TAG, "Creating node "+topicName);
 							eventNode = pubmgr.createNode(topicName,f);
 							//Put node to hashmap
+							Log.i(TAG, "Putting node"+topicName+"to hashmap");
 							Nodes.put(topicName,eventNode);
 							
 						} catch (XMPPException e1) {
-							//e1.printStackTrace();
-							Log.e(TAG, "Problem creating event "+topicName);
+							e1.printStackTrace();
+							Log.e(TAG, "Problem creating node "+topicName);
 							return null;
 						}
 					}
@@ -233,16 +290,35 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					
 					try {
 						//Add event listener
-						eventListener = new ItemEventCoordinator(isProxy, rType);
+						if(list!=null)
+						{
+							if(properties!=null)
+								eventListener = new ItemEventCoordinator(isProxy, rType, topicName, destinationName, properties, list);
+							else
+								eventListener = new ItemEventCoordinator(isProxy, rType, topicName, destinationName, properties, list);
+						}
+						else
+						{	
+							if(properties!=null)
+								eventListener = new ItemEventCoordinator(isProxy, rType, topicName, destinationName, properties);
+							else
+								eventListener = new ItemEventCoordinator(isProxy, rType, topicName, destinationName, properties);
+						}
+						
 						eventNode.addItemEventListener(eventListener);
 						//Put node listener created in a hashMap
 						NodeListeners.put(topicName, eventListener);
 						
 						//Subscribe to the node
 						eventNode.subscribe(xmpp.getUser());
+						
 					} catch (XMPPException e) {
 						e.printStackTrace();
+						Log.e(TAG, "Problem subscribing "+topicName);
+						return null;
 					}
+					
+					//Here put publication of inform message
 					return eventNode;
 			}
 			return null;
@@ -283,41 +359,58 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		
 	
 	
-	
+	/**
+	 * Destroy the xmpp connection, remove event listeners and the nodes from the NODE hashmap
+	 */
 		public void destroyConnection(){
-			
-			//remove connection listener
-			xmpp.removeConnectionListener(connectionListener);
-			
-			//destroy all topics and remove their listeners
-			destroyTopics();
-			if(xmpp != null)
-				xmpp.disconnect();
-			
+			if(xmpp.isConnected()){
+				//remove connection listener
+				xmpp.removeConnectionListener(connectionListener);
+				
+				//destroy all topics and remove their listeners
+				destroyTopics();
+				if(xmpp != null)
+					xmpp.disconnect();
+			}
 			xmpp = null;
 		}
 	
-		public void destroySingleTopic(String topicName){
+		/**
+		 * Destroy a single topic, called when a release message arrives
+		 * @param topicName
+		 * @return boolean : true if destroy has succeeded, false otherwise
+		 */
+		public boolean destroySingleTopic(String topicName){
+			Log.i(TAG,"Destroy sigle topic");
 			Node node = Nodes.get(topicName); 
 			ItemEventCoordinator nodeListener = NodeListeners.get(topicName);
 		    node.removeItemEventListener(nodeListener);
+		    
 		    Nodes.remove(topicName);
+		    NodeListeners.remove(topicName);
+		    
+		    Log.i(TAG,"Destroy sigle topic2");
 		    try {
 				pubmgr.deleteNode(topicName);
 			} catch (XMPPException e) {
 				Log.e(TAG,"Problem deleting node "+topicName);
+				return false;
 			}
+		    
+		    return true;
 		}
 	
+		/**
+		 * Destroy all topics, called when destroyConnection() is called
+		 */
 		public void destroyTopics(){
-			//eventNode.removeItemEventListener(eventListener);
-			
-			
+		
 			for (String key : Nodes.keySet()) {
 			    Node node = Nodes.get(key);
 			    ItemEventCoordinator nodeListener = NodeListeners.get(key);
 			    node.removeItemEventListener(nodeListener);
 			    try {
+			    	Log.i(TAG,"Deleting node: "+ key);
 					pubmgr.deleteNode(key);
 				} catch (XMPPException e) {
 					Log.e(TAG, "Node deletion problem");
@@ -328,8 +421,8 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		
 		
 		/**Item Listener
-		 * 
-		 * @author Polychronis
+		 * Is the xmpp message listener object that is bound to each topic that is created
+		 * @author Polychronis Symeonidis
 		 * 
 		 */
 		@SuppressWarnings("rawtypes")
@@ -343,26 +436,97 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			private int in;
 			private boolean Proxy;
 			private String rType;
+			private String listensTo;
+			private String replysTo;
+			private List<String> memberships;
+			//private Lock lock;
+			private HashMap<String, Object> properties;
+			private OMFMessage omfMessage;
+			private OMFProxyHandlers omfHandler;
 			
-			public ItemEventCoordinator(boolean isProxy, String rType){
+			/**
+			 * ItemEventCoordinator Constructor
+			 * @param isProxy : boolean if the topic is a resource proxy
+			 * @param rType : The resource type of the proxy, null if it is not a proxy
+			 * @param srcName : source of the xmpp message 
+			 * @param dstName :  destination of the reply
+			 * @param Props :  creation properties of the resource proxy, null if it is not a proxy
+			 * 
+			 */
+			public ItemEventCoordinator(boolean isProxy, String rType, String srcName, String dstName, HashMap<String, Object> Props){
 				
 	    		duplicateCheck = new String[10];
 	    		duplicateFlag = false;
 	    		this.Proxy = isProxy;
 	    		this.rType = rType;
+	    		this.listensTo = srcName;			//which topic the listener is assigned to listen
+	    		this.replysTo = dstName;
+	    		this.memberships = new ArrayList<String>();
+	    		this.omfMessage = new OMFMessage();
 	    		
+	    		if(Props!=null)
+	    			this.omfHandler = new OMFProxyHandlers(Props, ctx, srcName, serverName);
 	    		
 	    		in = 0;
 	    		for(int j=0;j<10;j++)
 	    		{
 	    			duplicateCheck[j] =""; 
 	    		}
+	    		
+	    		//this.lock = new ReentrantLock();
+	    		
+	    		if(Props!=null)
+	    			this.properties = new HashMap<String,Object> (Props);
+	    		else
+	    			this.properties = null;
+
+			}
+			/**
+			 * ItemEventCoordinator Constructor
+			 * @param isProxy : boolean if the topic is a resource proxy
+			 * @param rType : The resource type of the proxy, null if it is not a proxy
+			 * @param srcName : source of the xmpp message 
+			 * @param dstName :  destination of the reply
+			 * @param Props :  creation properties of the resource proxy, null if it is not a proxy
+			 * @param list : list of the topic memberships
+			 */
+			public ItemEventCoordinator(boolean isProxy, String rType, String srcName, String dstName, HashMap<String, Object> Props , List<String> list){
+				
+	    		duplicateCheck = new String[10];
+	    		duplicateFlag = false;
+	    		this.Proxy = isProxy;
+	    		this.rType = rType;
+	    		this.listensTo = srcName;			//which topic the listener is assigned to listen
+	    		this.replysTo = dstName;
+	    		this.memberships = list;
+	    		this.omfMessage = new OMFMessage();
+	    		
+	    		
+	    		if(Props!=null)
+	    			this.omfHandler = new OMFProxyHandlers(Props, ctx, srcName, serverName);
+	    		
+	    		in = 0;
+	    		for(int j=0;j<10;j++)
+	    		{
+	    			duplicateCheck[j] =""; 
+	    		}
+	    		
+	    		//this.lock = new ReentrantLock();
+	    		
+	    		if(Props!=null)
+	    			this.properties = new HashMap<String,Object> (Props);
+	    		else
+	    			this.properties = null;
+
 			}
 			
 	        @Override
+	        /**
+	         * handlePublishedItems
+	         * Gets the published XML item parses it and handles it
+	         */
 	        public void handlePublishedItems(ItemPublishEvent <PayloadItem> items)
-	        {
-	        	//parser = new XMPPParser();
+	        {	
 	        	try {
 					parser2 = new XMPPParserV2();
 				} catch (XmlPullParserException e1) {
@@ -374,48 +538,53 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					if(!items.isDelayed())
 					{
 						try {
-			        		//omfMessage = parser.XMLParse(item.toXML());
+							//parse the XML Item
 			        		omfMessage = parser2.XMLParse(item.toXML());
-			        		//System.out.println(omfMessage.toString());
-			        		
-			        		//System.out.println("parser2: " + parser2.XMLParse(item.toXML()).toString());
-			        		
-			        		System.out.println(item.toString());
+
 			        		if(!omfMessage.isEmpty())
 			        		{
-			        			duplicateFlag = false;
-			        			for(int i=0;i<10;i++)
-			        			{	
-			        				if(omfMessage.equals(duplicateCheck[i]))
+				        			duplicateFlag = false;
+				        			for(int i=0;i<10;i++)
+				        			{	
+				        				//Log.w(TAG, listensTo+":Duplicate array "+i+": "+duplicateCheck[i]);
+				        				if(omfMessage.equals(duplicateCheck[i]))
+				        				{
+				        					//Log.e(TAG, "FOUND DUPLICATE");
+				        					duplicateFlag = true;
+				        					break;
+				        				}
+				        			}
+				        		
+				        			if(!duplicateFlag)
 			        				{
-			        					duplicateFlag = true;
+				        				//Circular array, increment counter
+				        				in=(in+1)%10;
+				        				//put message into duplicateCheck array
+				        				duplicateCheck[in]=omfMessage.getMessageID();
+				        				
+				        				if(Proxy)
+				        				{
+				        					System.out.println("This is a resource proxy");
+				        					if(rType.equalsIgnoreCase("wlan")){
+				        						System.out.println("wlan");
+				        						memberships = omfHandler.OMFNetworkHandler(omfMessage, listensTo, memberships, replysTo, Nodes);
+				        					}
+				        					else if(rType.equalsIgnoreCase("application"))
+				        					{
+				        						System.out.println("Receiving message to AppProxy");
+				        						//System.out.println(properties.toString());
+				        						memberships = omfHandler.OMFApplicationHandler(omfMessage, listensTo, memberships, replysTo, Nodes);
+				        					}
+				        				}
+				        				else
+				        				{
+				        					memberships = OMFMainHandler(omfMessage, listensTo, memberships, replysTo, properties);
+				        				}
+				        				Log.e(TAG, "############################################");
+				        				Log.i(TAG,listensTo+"##"+item.toString());
+				        				Log.e(TAG, "############################################");
+			        					//System.out.println(omfMessage.toString());
 			        				}
-			        			}
-			        		
-			        			if(!duplicateFlag)
-		        				{
-			        				//Circular array, increment counter
-			        				in=(in+1)%10;
-			        				//put message into duplicateCheck array
-			        				duplicateCheck[in]=omfMessage.getMessageID();
-			        				if(Proxy)
-			        				{
-			        					System.out.println("This is a resource proxy");
-			        					if(rType.equalsIgnoreCase("network")){
-			        						System.out.println("Network");
-			        						OMFNetworkHandler(omfMessage);
-			        					}
-			        					else if(rType.equalsIgnoreCase("application"))
-			        					{
-			        						System.out.println("STARTING APPLICATION");
-			        					}
-			        				}
-			        				else
-			        				{
-		        						OMFMainHandler(omfMessage);
-			        				}
-		        					System.out.println(omfMessage.toString());
-		        				}
 			        		}
 			        		else
 			        		{
@@ -430,13 +599,15 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				}  
 	        }
 	    }
-		
+		/**
+		 * XMPP connection Listener
+		 * Listens to the connection and handles disconnections that are cause by exceptions
+		 * @author Polychronis Symeonidis
+		 *
+		 */
 		class XMPPConnectionListener implements ConnectionListener{
 			 public void connectionClosed() {
 	             Log.d("SMACK","Connection closed ()");
-	             if (flag){
-	            	 XMPPCreateConnection();
-	             }
 	         }
 	
 	         public void connectionClosedOnError(Exception e) {
@@ -461,104 +632,271 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		}
 		
 		
+	
 		/**
-		 * OMF Message handlers
-		 * @param message : OMF message type
+		 * 
+		 * @param incomingMessage : OMFMessage that is handled
+		 * @param fromTopic : where the message came from
+		 * @param memberships  : A list of the topic memberships
+		 * @param toTopic : Where the topic replys
+		 * @param properties : properties of the topic
+		 * @return List<String> :  List of the memberships
 		 */
-		
-		public void OMFMainHandler(OMFMessage message){
+		public List<String> OMFMainHandler(OMFMessage incomingMessage, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Object> properties){
 			
 			//XML Generator for the MainHandler
 			XMLGenerator xmlGen = new XMLGenerator();
+			RegularExpression regEx = new RegularExpression();
+			String xmlPayload = null;
+			Node mainNode = Nodes.get(toTopic);
+			HashMap<String, Object> propsMap = null;
+			
+			String myUid ="xmpp://"+fromTopic+"@"+serverName;
+			String myResType = "Android OMF 6 Resource Controller";
+			
+			System.out.println(incomingMessage);
+			OMFMessage message = new OMFMessage(incomingMessage);
+			
 			
 			if(message.getMessageType().equalsIgnoreCase("create"))
 			{
-				//message.OMFCreate();
-				createTopic((String)message.getProperty("uid"),true, message.getType());
-				System.out.println(message.getProperty("uid"));
+				
+				Log.i(TAG,fromTopic+": "+"create");
+				if(message.getType().equalsIgnoreCase("application") || message.getType().equalsIgnoreCase("wlan"))
+				{
+
+					String appTopicName = UUID.randomUUID().toString();
+					//String appTopicName = message.getMessageID();
+					Node applicationNode = createTopic(appTopicName,true,message.getType(),appTopicName, null,message.getPropertiesHashmap());
+					
+					String appTopicUri = "xmpp://"+appTopicName+"@"+serverName;
+					
+					
+					if(applicationNode!=null)
+					{
+						propsMap = new HashMap<String, Object>();
+						
+						propsMap = xmlGen.addProperties(propsMap, "res_id", new PropType(appTopicUri,"string"));
+						
+						//send inform to application node only with res_id as property
+						xmlPayload = xmlGen.informMessage(appTopicName, serverName, null, "CREATION.OK", propsMap);
+						msgPub.PublishItem(xmlPayload, SCHEMA, "inform", applicationNode);
+							
+						//Check if message contains membership property
+						//If property membership exists
+						if(message.getProperty("membership")!=null){
+							PropType prop = (PropType)message.getProperty("membership");
+							String membership = null;
+							String membershipTopic = null;
+							propsMap = new HashMap<String, Object>();
+
+							
+							if(prop.getType().equalsIgnoreCase("String")){
+								membership =(String)prop.getProp();
+								
+								//Get membership from xmpp://membership@host using regular expressions OMF 6.0.7 version sends membership in that particular format
+								membershipTopic = regEx.membershipReg(membership);
+								if (membershipTopic != null) {
+									Node newNode = null;
+									//Send Inform to main topic
+	
+									//inform message to answer
+									xmlPayload = xmlGen.informMessage(appTopicName, serverName, message, "STATUS", propsMap);
+									
+									
+									//Subscribe to membership, or create the topic
+									List<String> tempList = new ArrayList<String> ();
+									tempList.add(membershipTopic);
+									newNode = createTopic(membershipTopic,true,message.getType(), appTopicName, tempList,message.getPropertiesHashmap());
+									
+									//add membership array
+									propsMap = xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(tempList,"array"));
+									
+									//add hrn
+									if(message.getProperty("hrn")!=null)
+									{
+										if(((PropType)message.getProperty("hrn")).getType().equalsIgnoreCase("string"))
+										{
+											propsMap = xmlGen.addProperties(propsMap, "hrn", new PropType((String)(((PropType)message.getProperty("hrn")).getProp()),"string"));
+										}
+									}
+									
+									//Add this membership to my membership list
+									xmlPayload = xmlGen.informMessage(appTopicName, serverName, null, "STATUS", propsMap);	//Send that i subscribed to membership
+									
+									//publish outcome of membership to the new "member" node and to the original topic?()
+									msgPub.PublishItem(xmlPayload, SCHEMA, "inform", newNode);
+									
+									
+								}
+								
+
+								propsMap = new HashMap<String, Object>();
+								propsMap.putAll(message.getPropertiesHashmap());
+								propsMap = xmlGen.addProperties(propsMap, "res_id", new PropType(appTopicUri,"string"));
+								propsMap = xmlGen.addProperties(propsMap, "uid", new PropType(appTopicName,"string"));
+								
+						
+								xmlPayload = xmlGen.informMessage(Topic, serverName, message, "CREATION.OK", propsMap);
+							
+								msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+							}
+						}
+						
+					}
+					else
+					{
+						//send inform to main node
+						xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "CREATION.FAILED", xmlGen.addProperties(new HashMap<String, Object>(), "reason", new PropType("Uknown error prevented the creation of the resource "+message.getType(),"string")));
+						msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+					}
+					
+				}
+				else
+				{
+					//send inform to main node
+					xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "CREATION.FAILED", xmlGen.addProperties(new HashMap<String, Object>(), "reason", new PropType("Unknown type of resource '"+message.getType()+"'","string")));
+					msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				}
+				
+				//createTopic((String)message.getProperty("uid"),true, message.getType());
+				//System.out.println(message.getProperty("uid"));				
+				
 			}
 			else if (message.getMessageType().equalsIgnoreCase("configure"))
 			{
+				Log.i(TAG,fromTopic+": "+"configure");
 				
-				String membership = (String) message.getProperty("membership");
-				if (membership != null) {
-					Node newNode = null;
-					System.out.println("test");
-					//Send Inform to main topic
-					Node mainNode = Nodes.get(Topic);
-					xmlGen.OMFMessageGenerator(mainNode, "inform", message, "membership", Topic);
-					
-					//Subscribe to membership, or create the topic
-					newNode = createTopic(membership,false,"");
-					xmlGen.OMFMessageGenerator(newNode, "inform", message, "membership", Topic);
-					
+				
+				//If property membership exists
+				if(message.getProperty("membership")!=null){
+					PropType prop = (PropType)message.getProperty("membership");
+					String membership = null;
+					String membershipTopic = null;
+					if(prop.getType().equalsIgnoreCase("String")){
+						membership =(String)prop.getProp();
+						
+						//Get membership from xmpp://membership@host using regular expressions OMF 6.0.7 version sends membership in that particular format
+						membershipTopic = regEx.membershipReg(membership);
+				
+						if (membershipTopic != null ) {
+							Node newNode = null;
+							//Send Inform to main topic
+
+							if(checkMembership(memberships, membership)){
+								//inform message to answer
+								xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "STATUS", xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));
+								msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+							
+								//Subscribe to membership, or create the topic
+								newNode = createTopic(membershipTopic,false,"", membershipTopic, null, null);//i kathusterimeni malakia eftaige
+								memberships.add(membership);																																			//Add this membership to my membership list
+							}
+							else
+							{
+								//inform message to answer
+								xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "STATUS", xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));
+								msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+								
+								newNode = Nodes.get(membershipTopic);
+							}
+							
+							xmlPayload = xmlGen.informMessage(toTopic, serverName, null, "STATUS", xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));	//Send that i subscribed to membership
+								
+							//publish outcome of membership to the new "member" node and to the original topic
+							msgPub.PublishItem(xmlPayload, SCHEMA, "inform", newNode);
+							msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+						}
+					}
 				}
+				else
+				{
+					//reply with error
+					xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "ERROR", null);
+					msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				}
+				
+				
 			}
 			else if (message.getMessageType().equalsIgnoreCase("request"))
 			{
+				System.out.println(fromTopic+": "+"request");
 				
+				propsMap = new HashMap<String, Object>();
+				
+				if(message.getProperty("uid")!=null)
+				{
+					propsMap = xmlGen.addProperties(propsMap, "uid", new PropType(myUid,"string"));
+					propsMap = xmlGen.addProperties(propsMap, "type", new PropType(myResType,"string"));
+				}
+				if(message.getProperty("res_id")!=null)
+					propsMap = xmlGen.addProperties(propsMap, "res_id", new PropType(myResType,"string"));
+				
+				//Add this membership to my membership list
+				xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propsMap);	//Send that i subscribed to membership
+				
+				//publish outcome of membership to the new "member" node and to the original topic?()
+				msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				//message.OMFRequest();
 			}
 			else if (message.getMessageType().equalsIgnoreCase("inform"))
 			{
-				
+				System.out.println(fromTopic+": "+"inform");
+				//message.OMFInform();
 			}
 			else if (message.getMessageType().equalsIgnoreCase("release"))
 			{
+				System.out.println(fromTopic+": "+"release");
+				System.out.println(message.toString());
+				
+				
+				//release topic
+				boolean outcome = destroySingleTopic(message.getResID());
+				//boolean outcome = true;
+				if(outcome)
+				{
+					//inform released
+					xmlPayload = xmlGen.informMessage(message.getResID(), serverName, message, "RELEASED", null);
+					//System.out.println("#######"+xmlPayload);
+					
+					
+				}
+				else
+				{
+					//inform failed-error
+					xmlPayload = xmlGen.informMessage(message.getResID(), serverName, message, "ERROR", null);
+					//PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				}	
+				
+				msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				//send inform to application node only with res_id as property
+				
+				
+			}
+			
+			return memberships;
+		}
 
-			}
-			
-			return;
-		}
+		
 	
+	
+		
 	/**
-	 * Network Handler
-	 * @param message : OMF message type
+	 * checkMembership function to handle duplicate membership requests
+	 * @param list
+	 * @param membershipRequest
+	 * @return boolean: if membership exists
 	 */
-	public void OMFNetworkHandler(OMFMessage message){
-		
-		if(message.getMessageType().equalsIgnoreCase("create"))
+	public boolean checkMembership(List<String> list, String membershipRequest)
+	{
+		for(int i=0;i<list.size();i++)
 		{
-			//message.OMFCreate();
-			
-			//createTopic(message.getProperty("uid"),true);
-			
+			if(membershipRequest.equalsIgnoreCase(list.get(i)))
+				return false;
 		}
-		else if (message.getMessageType().equalsIgnoreCase("configure"))
-		{
-			//message.OMFConfigure();
-			String value = (String)message.getProperty("wifi_state");
-			if (value != null) {
-				wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
-				if(value.equalsIgnoreCase("false")){
-					System.out.println("Wifi OFF");
-				}
-				else if(value.equalsIgnoreCase("true")){
-					System.out.println("Wifi ON");
-				}
-				wifiManager.setWifiEnabled(Boolean.parseBoolean(value));
-			} else {
-			    // No such key
-			}
-						
-		}
-		else if (message.getMessageType().equalsIgnoreCase("request"))
-		{
-			//message.OMFRequest();
-		}
-		else if (message.getMessageType().equalsIgnoreCase("inform"))
-		{
-			//message.OMFInform();
-		}
-		else if (message.getMessageType().equalsIgnoreCase("release"))
-		{
-			//message.OMFInform();
-		}
-		
-		return;
+		return true;
 	}
-		
-		
-		
-		
+	
+	
 	}
 

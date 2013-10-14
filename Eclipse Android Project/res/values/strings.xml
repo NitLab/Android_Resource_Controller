@@ -15,10 +15,10 @@
     
     
     <!-- STYLES -->
-    <style name="SwitchTextAppearance" parent="@android:style/TextAppearance.Holo.Small">
+   <!--  <style name="SwitchTextAppearance" parent="@android:style/TextAppearance.Holo.Small">
     	<item name="android:textColor">@color/white</item>
 	</style>
-	
+	-->
     <!-- BUTTONS -->
     <string name="btn_id">RcCtlServiceBtn</string>
     <string name="btn_service_start">RscCtl Start</string>
@@ -29,10 +29,10 @@
 	
 	<string name="configuration">Configuration</string>
 	
-	<string name="uid">Uid:</string>
+	<string name="uid">UID:</string>
 	<string name="uri">XMPP Server:</string>
 	
-	<string name="hint1">android.omf.IMEI</string>
+	<string name="hint1">nitos.android.IMEI</string>
 	<string name="hint2">nitlab.inf.uth.gr</string>
 	
 	<string name="nitlab_image">nilab_image</string>

@@ -8,8 +8,11 @@ package com.omf.resourcecontroller;
 
 
 
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
+
+import org.jivesoftware.smack.XMPPConnection;
 
 import android.app.ActivityManager;
 import android.app.Notification;
@@ -18,6 +21,9 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.os.StrictMode;
 import android.telephony.TelephonyManager;
@@ -25,7 +31,11 @@ import android.util.Log;
 
 import com.omf.resourcecontroller.OMF.OMFMessage;
 import com.omf.resourcecontroller.OMF.XMPPClass;
-
+/**
+ * Background service 
+ * @author Polychronis Symeonidis
+ *
+ */
 public class BackgroundService extends Service implements Constants{
 
 	public static final String TAG = "BackgroundService";
@@ -35,15 +45,7 @@ public class BackgroundService extends Service implements Constants{
 	private TelephonyManager  telephonyMgr = null;
 	
 	// XMPP variables
-	//private XMPPConnection xmpp = null;						// 	XMPP CONNECTION VAR
-	//private ConnectionConfiguration connConfig = null;		//  XMPP CONFIGURATION
-	//private PubSubManager pubmgr = null;					// 	XMPP PUB SUB MANAGER
-	//private Node eventNode = null;
-	//private Context ctx = null;
 	private XMPPClass test = null;
-	//XMPP Parser 
-	//private XMPPParser parser = null;
-	
 	//OMF message object
 	OMFMessage omfMessage = null;
 	
@@ -53,9 +55,10 @@ public class BackgroundService extends Service implements Constants{
 	//TopicName
 	private String topicName = null;
 	
-	
+	//ServerName
+	private String serverName = null;
 	 
-	 
+	private XMPPConnection xmpp = null; 
 	 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -78,11 +81,37 @@ public class BackgroundService extends Service implements Constants{
 		
 		
 		
-		topicName = telephonyMgr.getDeviceId();
+		//topicName = telephonyMgr.getDeviceId();
 		
-		UnamePass = "android.omf."+topicName;
+		 if (telephonyMgr.getDeviceId() != null)
+			 topicName = telephonyMgr.getDeviceId(); //*** use for mobiles
+		 else
+		 {
+		     //topicName = Secure.getString(getApplicationContext().getContentResolver(), Secure.ANDROID_ID); //*** use for tablets
+		 
+			try 
+			{
+				Class<?> c = Class.forName("android.os.SystemProperties");
+				Method get = c.getMethod("get", String.class);
+				topicName = (String) get.invoke(c, "ro.serialno");
+			} catch (Exception ignored) {
+				
+			}
+		 }
+
+		//Get saved settings if they exist otherwise start connection with default values
+		SharedPreferences settings = getSharedPreferences("XMPPSettings", Context.MODE_PRIVATE);
+		UnamePass = settings.getString("username", "nitos.android."+topicName);	//if shared preference does not exist return default value android.omf.IMEI
+		serverName = settings.getString("server", DEFAULT_SERVER);
 		
+		Log.i(TAG,"Username: " + UnamePass);
+		Log.i(TAG,"Server: " + serverName);
 		
+		UnamePass = UnamePass.toLowerCase();	//XMPP openfire server does not support Upper case characters for accounts 
+		serverName = serverName.toLowerCase();	//But supports upper case characters for topic names so we lower the case to have the same name for everything
+		
+		Log.i(TAG,"Lowercase Username: " + UnamePass);
+		Log.i(TAG,"Lowercase Server: " + serverName);
 		
 		/////////////	THREAD POLICY
 		
@@ -90,15 +119,9 @@ public class BackgroundService extends Service implements Constants{
 		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 		StrictMode.setThreadPolicy(policy);
 		
-		//Init aSmack
-		//ctx = getApplicationContext();
-		//SmackAndroid.init(ctx);
-		
 		// XMPP CONNECTION
-		//connConfig = new ConnectionConfiguration(SERVER,PORT);
-		//xmpp = new XMPPConnection(connConfig);
-		// test = new XMPPClass("BackgroundServiceThread","AndroidThreadTest","pw",getApplicationContext());
-		 test = new XMPPClass(UnamePass, UnamePass, topicName, getApplicationContext());
+		
+		test = new XMPPClass(UnamePass, UnamePass, UnamePass, serverName, getApplicationContext());
 	}
 
 	@Override
@@ -106,11 +129,7 @@ public class BackgroundService extends Service implements Constants{
 		super.onDestroy();
 		
 		// CLOSE CONNECTION
-		//if(xmpp != null)
-		//	xmpp.disconnect();
-		
-		
-		if(test != null)
+		if(test != null && xmpp!=null)
 			test.destroyConnection();
 		
 		test = null;
@@ -124,20 +143,42 @@ public class BackgroundService extends Service implements Constants{
 	@Override
 	public void onStart(Intent intent, int startId) {
 		super.onStart(intent, startId);
-		
-		
-		//xmpp = test.XMPPCreateConnection("AndroidThreadTest", "pw", getApplicationContext());
-		//test.start();
-		
-		test.XMPPCreateConnection();
-		displayNotificationMessage("XMPP started");
-		Log.i(TAG,"XMPP started");
+
+		//If internet exists start connection else display error message
+		if(isNetworkAvailable()){
+			xmpp = test.XMPPCreateConnection();
+			if(xmpp!=null){
+				displayNotificationMessage("XMPP started");
+				Log.i(TAG,"XMPP started");
+			}
+			else{
+				displayNotificationMessage("Check server name and uid!");
+				Log.e(TAG,"Connection failed");
+				Log.e(TAG,"Check server and uid");
+			}
+		}
+		else
+		{
+			displayNotificationMessage("Check internet connectivity");
+			Log.e(TAG,"Internet connection unavailable");
+		}
 		
 		
 	}
 	
 	
-	
+	/**
+	 * Check if an internet connection exists
+	 * 
+	 * @return true if the internet exists
+	 */
+	//--Check if device has an internet connection
+		private boolean isNetworkAvailable() {
+		    ConnectivityManager connectivityManager 
+		          = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+		    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+		}
 	
 
 	// --- SERVICE CHECK CONTROL USING THE SYSTMEM
@@ -162,13 +203,13 @@ public class BackgroundService extends Service implements Constants{
 
 
 	/**
-	 * 
+	 * Displays a notification message on the device screen
 	 * @param message : the message to be displayed as a notification
 	 */
 	private void displayNotificationMessage(String message) {
 		Notification notify = new Notification(android.R.drawable.stat_notify_chat, message, System.currentTimeMillis());
 		notify.flags = Notification.FLAG_AUTO_CANCEL;
-		notify.icon = R.drawable.resource_controller;
+		notify.icon = R.drawable.nitlab_n_app_logo;
 		
 		// The service is not running
 		if(!isServiceRunning(("." + BackgroundService.class.getSimpleName()).trim())){

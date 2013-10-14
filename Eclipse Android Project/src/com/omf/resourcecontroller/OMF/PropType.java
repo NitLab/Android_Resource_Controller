@@ -6,7 +6,13 @@
 
 package com.omf.resourcecontroller.OMF;
 
-
+/**
+ * Property type class
+ * Holds the object --  object can be ArrayList, HashMap, String, Integer
+ * and the object type as a string "ArrayList", "HashMap", "String", "Integer"
+ * @author Polychronis Symeonidis
+ * 
+ */
 public class PropType {
 	
 	String Type;

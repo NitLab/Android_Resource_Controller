@@ -20,13 +20,16 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ToggleButton;
-//import android.view.Menu;
 
+/**
+ * Start up activity
+ * @author Polychronis Symeonidis
+ *
+ */
 public class StartUpActivity extends Activity {
 	
 	public static final String TAG = "StartUpActivity";
-	
-	
+
 	private ToggleButton toggleService = null;
 
 	@Override
@@ -104,20 +107,23 @@ public class StartUpActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			
-			Intent intent = new Intent(StartUpActivity.this, BackgroundService.class);
-			intent.addFlags(Service.START_STICKY);
-			intent.addFlags(Service.BIND_AUTO_CREATE);
 			
-			if(toggleService.isChecked() && !isServiceRunning(".BackgroundService")){
-				Log.i(TAG, "Start Service");
-				startService(intent);
-			}else {
-				Log.i(TAG, "Stop Service");
-				stopService(intent);
-			}
+				Intent intent = new Intent(StartUpActivity.this, BackgroundService.class);
+				intent.addFlags(Service.START_STICKY);
+				intent.addFlags(Service.BIND_AUTO_CREATE);
+				
+				if(toggleService.isChecked() && !isServiceRunning(".BackgroundService")){
+						Log.i(TAG, "Start Service");
+						startService(intent);
+				}else {
+					Log.i(TAG, "Stop Service");
+					stopService(intent);
+				}
 			
 		}
 	};
+	
+	
 	
 	// --- SERVICE CHECK CONTROL USING THE SYSTMEM
 			// Check if the service is running

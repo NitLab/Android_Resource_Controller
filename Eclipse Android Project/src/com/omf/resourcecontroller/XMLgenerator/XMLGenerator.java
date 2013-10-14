@@ -1,44 +1,116 @@
 package com.omf.resourcecontroller.XMLgenerator;
 
+import java.util.HashMap;
 import java.util.UUID;
-
-import org.jivesoftware.smackx.pubsub.LeafNode;
-import org.jivesoftware.smackx.pubsub.Node;
-import org.jivesoftware.smackx.pubsub.PayloadItem;
-import org.jivesoftware.smackx.pubsub.SimplePayload;
 
 import com.omf.resourcecontroller.Constants;
 import com.omf.resourcecontroller.OMF.OMFMessage;
-
+import com.omf.resourcecontroller.OMF.PropType;
+/**
+ * XML Generator, Generates OMF messages(inform messages at the moment)
+ * @author Polychronis Symeonidis
+ *
+ */
 public class XMLGenerator implements Constants{
 	
-	public void OMFMessageGenerator(Node node, String mtype, OMFMessage message, String propType , String Topic){
-		UUID mid = UUID.randomUUID();							//message id
-		long timestamp = System.currentTimeMillis() / 1000L;	//timestamp
-		String src ="xmpp://"+Topic+"@"+SERVER;
-		String xmlString = null;
-		if(mtype.equalsIgnoreCase("inform") && node!=null && message.getMessageType().equals("configure")){
+	public static final String TAG = "XMLGenerator";
+	
+	
+	/**
+	 * 
+	 * @param Topic : source Topic name
+	 * @param serverName : Server name 
+	 * @param incomingMessage : Incoming OMFMessage that the inform replys to, if null the inform does not have a cid
+	 * @param iType : Inform type (STATUS, CREATION.OK, ERROR...etc)
+	 * @param properties : properties of the inform message, if the exist
+	 * @return
+	 */
+	public String informMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType, HashMap<String, Object> properties){
+		OMFMessage message = new OMFMessage();
+		message.setMessageType("inform");
+		message.setMessageID(UUID.randomUUID().toString());
+		message.setTs(System.currentTimeMillis() / 1000L);
+		message.setSrc("xmpp://"+Topic+"@"+serverName);
+		
+		
+
+		if(incomingMessage!=null)
+		{
+			message.setCid(incomingMessage.getMessageID());
 			
-			xmlString = "<"+mtype+" xmlns='"+SCHEMA+"' mid='"+mid+"'" + ">" 
-						+"<src>"+src+"</src>"
-						+"<ts>"+timestamp+"</ts>"
-						+"<cid>"+message.getMessageID()+"</cid>"
-						+"<itype>"+"STATUS"+"</itype>"
-						+"<props>"
-						+"<"+ propType +" type='array' >" 
-						+"<it type='string'>"+message.getProperty(propType)+"</it>"
-						+"</"+ propType +">"
-						+"</props>"
-						+"</"+ mtype +">";
-			SimplePayload payload = new SimplePayload(mtype,SCHEMA, xmlString);
+			if(incomingMessage.getResID()!=null && (iType.equals("RELEASED") || iType.equals("ERROR")))
+			{
+				message.setResID("xmpp://"+incomingMessage.getResID()+"@"+serverName);
 			
-			System.out.println(xmlString);
-			
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			PayloadItem payloadItem = new PayloadItem(null, payload);
-				
-			((LeafNode)node).publish(payloadItem);
+				if(iType.equals("ERROR"))
+					message.setReason("Node could not be released");
+			}
 			
 		}
+
+			
+		if(iType.equalsIgnoreCase("STATUS") || iType.equalsIgnoreCase("CREATION.OK") || iType.equalsIgnoreCase("CREATION.FAILED"))
+		{
+			//inform must have properties
+			if(properties!=null)
+				message.setPropertiesHashmap(properties);
+		}
+		
+
+		message.setType(iType);
+		return message.toXML();
+	}
+	
+	public String createMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
+		OMFMessage message = new OMFMessage();
+		message.setMessageType("create");
+		message.setMessageID(UUID.randomUUID().toString());
+		message.setTs(System.currentTimeMillis() / 1000L);
+		message.setSrc("xmpp://"+Topic+"@"+serverName);
+		message.setCid(incomingMessage.getMessageID());
+		message.setType(iType);
+		
+		return message.toXML();
+	}
+	
+	public String releaseMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
+		OMFMessage message = new OMFMessage();
+		message.setMessageType("release");
+		message.setMessageID(UUID.randomUUID().toString());
+		message.setTs(System.currentTimeMillis() / 1000L);
+		message.setSrc("xmpp://"+Topic+"@"+serverName);
+		message.setCid(incomingMessage.getMessageID());
+		message.setType(iType);
+		
+		return message.toXML();
+	}
+	
+	public String configureMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
+		OMFMessage message = new OMFMessage();
+		message.setMessageType("configure");
+		message.setMessageID(UUID.randomUUID().toString());
+		message.setTs(System.currentTimeMillis() / 1000L);
+		message.setSrc("xmpp://"+Topic+"@"+serverName);
+		message.setCid(incomingMessage.getMessageID());
+		message.setType(iType);
+		
+		
+		
+		return message.toXML();
+	}
+	
+	/**
+	 * addProperties
+	 * adds properties to a hashmap so that they can be used to generate an omf message
+	 * @param props : HashMap<String, Object> props Object
+	 * @param propName : property name tag
+	 * @param propType : property type (String, array,hash, integer)
+	 * @returns HashMap<String, Object> : properties
+	 */
+	public HashMap<String, Object> addProperties(HashMap<String, Object> props,String propName,PropType propType)
+	{
+		
+		props.put(propName, propType);
+		return props;
 	}
 }

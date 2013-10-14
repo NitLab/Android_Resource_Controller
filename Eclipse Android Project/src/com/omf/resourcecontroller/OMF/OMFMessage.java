@@ -7,13 +7,19 @@
 package com.omf.resourcecontroller.OMF;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
-public class OMFMessage {
+import com.omf.resourcecontroller.Constants;
+
+public class OMFMessage implements Constants{
 	
 	//Object variables
 	private String  messageType;
 	private String messageID;
-	private long ts;
+	private Long ts;
 	private String src;
 	HashMap<String, Object> properties;
 	HashMap<String, Object> guard;
@@ -21,21 +27,40 @@ public class OMFMessage {
 	private String cid;
 	private String resID;
 	private String reason;
+	private String replyto;
 	
 	
 	//Constructor 
 	public OMFMessage(){
-		messageType = null;
-		messageID = null;
-		ts = 1234567890L;
-		src = null;
-		type = null;
-		cid = null;
-		resID = null;
-		reason = null;
-		properties = new HashMap<String, Object>();
-		guard = new HashMap<String, Object>();
+		this.messageType = null;
+		this.messageID = null;
+		this.ts = null;
+		this.src = null;
+		this.type = null;
+		this.cid = null;
+		this.resID = null;
+		this.reason = null;
+		this.replyto = null;
+		this.properties = new HashMap<String, Object>();
+		this.guard = new HashMap<String, Object>();
 	}
+	
+	//Copy Constructor
+	
+	public OMFMessage(OMFMessage copyMsg){
+		this.messageType = copyMsg.messageType;
+		this.messageID = copyMsg.messageID;
+		this.ts = copyMsg.ts;
+		this.src = copyMsg.src;
+		this.type = copyMsg.type;
+		this.cid = copyMsg.cid;
+		this.resID = copyMsg.resID;
+		this.reason = copyMsg.reason;
+		this.replyto = copyMsg.replyto;
+		this.properties = copyMsg.properties;
+		this.guard = copyMsg.guard;
+	}
+	
 	//Message type
 	public void setMessageType(String MessageType){
 		this.messageType = MessageType;
@@ -55,7 +80,7 @@ public class OMFMessage {
 	}
 	
 	//Timestamp
-	public void setTs(long timestamp){
+	public void setTs(Long timestamp){
 		this.ts = timestamp;
 	}
 	
@@ -89,6 +114,15 @@ public class OMFMessage {
 			
 	public String getResID(){
 		return this.resID;
+	}
+	
+	//Reply to
+	public void setReplyTo(String ReplyTo){
+		this.replyto = ReplyTo;
+	}
+		
+	public String getReplyTo(){
+		return this.replyto;
 	}
 	
 	//reason if it exists
@@ -161,7 +195,7 @@ public class OMFMessage {
 		if(cid!=null)
 			s+="Cid: "+cid+"\n";
 					
-		if(messageType.equalsIgnoreCase("inform") || messageType.equalsIgnoreCase("release"))
+		if(messageType.equalsIgnoreCase("inform"))
 			s+="Itype: "+type+"\n";
 		else if(messageType.equalsIgnoreCase("create"))
 			s+="Rtype: "+type+"\n";
@@ -225,5 +259,114 @@ public class OMFMessage {
 	}
 	
 	
+	public String toXML(){
+		String xml = null;
+		
+		
+		
+		if(this.messageType!=null){
+			if(this.messageID!=null)
+				xml="<"+this.messageType+" xmlns=\""+SCHEMA+"\" mid=\""+this.messageID+"\"" + " >";
+			
+			
+			if(!this.properties.isEmpty()) 
+			{
+				
+				xml+="<props>";
+				xml+=propertiesToXML(this.properties);
+				xml+="</props>";
+			}
+			
+			if(this.ts!=null)
+				xml+="<ts>"+this.ts+"</ts>";
+			
+			if(this.src!=null)
+				xml+="<src>"+this.src+"</src>";
+			
+			
+			if(this.cid!=null)
+				xml+="<cid>"+this.cid+"</cid>";
+			
+			
+			if(this.type!=null)
+			{
+				if(this.messageType.equalsIgnoreCase("inform") || this.messageType.equalsIgnoreCase("release"))
+					xml+="<itype>"+this.type+"</itype>";
+				else if(this.messageType.equalsIgnoreCase("create"))
+					xml+="<rtype>"+this.type+"</rtype>";
+			}
+		
+
+			if(this.resID!=null)
+				xml+="<res_id>"+this.resID+"</res_id>";
+			
+			if(this.replyto!=null)
+				xml+="<replyto>"+this.replyto+"</replyto>";
+			
+			if(this.reason!=null)
+				xml+="<reason>"+this.reason+"</reason>";
+			
+			
+			xml+="</"+ this.messageType+">";
+		}
+		
+		
+		return xml;
+	}
 	
+	@SuppressWarnings("unchecked")
+	public String propertiesToXML(HashMap<String, Object> parameterProps)
+	{
+		HashMap<String,Object> props = new HashMap<String, Object> (parameterProps);
+		String propsToXML = "";
+		String key = null;
+		PropType propType = null;
+
+		Iterator<Entry<String, Object>> it = props.entrySet().iterator();
+	    while (it.hasNext()) {
+	        Map.Entry<String, Object> pairs = (Map.Entry<String, Object>)it.next();
+	        //System.out.println(pairs.getKey() + " = " + pairs.getValue());
+	        key = pairs.getKey();
+	        propType =(PropType) pairs.getValue();
+	        
+	        
+	        if(propType.getType().equalsIgnoreCase("hash"))
+	        {
+	     
+	        	propsToXML+="<"+key+" type=\""+propType.getType()+"\">";
+	        	propsToXML+=propertiesToXML((HashMap<String, Object>)propType.getProp());
+	        	propsToXML+="</"+key+">";
+	        	
+	        }
+	        else if(propType.getType().equalsIgnoreCase("array"))
+	        {
+	        	
+	        	List<String> list= (List<String>)propType.getProp();
+	        	
+	        	propsToXML+="<"+key+" type=\""+propType.getType()+"\">";
+	        	
+	        	//iterate through list to get all items
+	        	if(!list.isEmpty()){
+		        	for(int i=0;i<list.size();i++)
+		        	{
+		        		propsToXML+="<it type=\"string\">"+list.get(i)+"</it>";		
+		        	}
+	        	}
+	        	propsToXML+="</"+key+">";
+	        }
+	        else
+	        {
+	        	
+	        	
+	        	propsToXML+="<"+key+" type=\""+propType.getType()+"\">";
+	        	propsToXML+=""+(String)propType.getProp()+"";
+	        	propsToXML+="</"+key+">";
+	        }
+	        it.remove(); // avoids a ConcurrentModificationException
+	    }
+		return propsToXML;
+	}
+	
+	
+
 }

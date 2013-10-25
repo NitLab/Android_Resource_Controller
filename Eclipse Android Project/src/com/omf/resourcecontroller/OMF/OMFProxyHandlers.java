@@ -19,6 +19,7 @@ import org.jivesoftware.smackx.pubsub.Node;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
@@ -306,7 +307,7 @@ public class OMFProxyHandlers implements Constants{
 	 * @param nodes : HashMap of the created Nodes by the RC
 	 */
 	@SuppressWarnings("unchecked")
-	public List<String> OMFApplicationHandler(OMFMessage message, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Node> nodes){
+	public List<String> OMFApplicationHandler(OMFMessage message, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Node> nodes) throws IllegalArgumentException {
 		
 		Log.e(TAG, "IN APP HANDLER");
 		HashMap<String, Object> resourceProps =new HashMap<String, Object>(this.properties);
@@ -318,7 +319,9 @@ public class OMFProxyHandlers implements Constants{
 		String binPath = null;
 		String packageName = null;
 		String serviceName = null;
+		String actionName = null;
 		String hrn = null;
+		Intent tmpintent = null;
 		//String uid = null;
 		//String myUid ="xmpp://"+uid+"@"+serverName; //currently unused
 		//String myResType = "Application Proxy";	//currently unused
@@ -340,8 +343,6 @@ public class OMFProxyHandlers implements Constants{
 			Log.e(TAG, "assign hrn");
 		}
 		
-		
-		Intent tmpintent = new Intent();
 		Log.e(TAG, "IS PLATFORM ANDROID = "+platform);
 		
 		//Assuming these properties are standard
@@ -352,17 +353,48 @@ public class OMFProxyHandlers implements Constants{
 				appDescription = (String)((PropType)resourceProps.get("description")).getProp();
 				Log.e(TAG, appDescription +" uid:"+ this.uid);
 			}
+			
 			//appId = (String)((PropType)resourceProps.get("app_id")).getProp();
-			packageName = (String)((PropType)((HashMap<String, Object>)((PropType)resourceProps.get("binary_path")).getProp()).get("package")).getProp();
-			serviceName = (String)((PropType)((HashMap<String, Object>)((PropType)resourceProps.get("binary_path")).getProp()).get("service")).getProp();
+			HashMap<String, Object> binary_path = (HashMap<String, Object>)((PropType)resourceProps.get("binary_path")).getProp();
 			
+			if (binary_path.get("package") != null) {
+				packageName = (String)((PropType) binary_path.get("package")).getProp();
+			} else {
+				Log.e(TAG, "Error getting package name.");
+				throw new IllegalArgumentException("You need to specify a package name.");
+			}
 			
-			Log.e(TAG,"NAME:"+ packageName + "." + serviceName);
+			if (binary_path.get("service") != null) {
+				serviceName = (String)((PropType) binary_path.get("service")).getProp();
+			}
 			
-			if(packageName!=null || serviceName!=null)
+			if (binary_path.get("action") != null) {
+				actionName = (String)((PropType) binary_path.get("action")).getProp();
+			}
+			
+			Log.e(TAG,"NAME:"+ packageName + "." + serviceName + " " + actionName);
+			
+			if (serviceName != null && actionName == null) {
+				tmpintent = new Intent();
 				tmpintent.setClassName(packageName, packageName + "." + serviceName);
-			else
-				Log.e(TAG, "Error getting service and package name");
+			} else if (serviceName == null && actionName != null) {
+				try {
+					tmpintent = new Intent((String)Intent.class.getField(actionName).get(tmpintent));
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NoSuchFieldException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				//tmpintent = new Intent(Intent.ACTION_VIEW);
+				
+				tmpintent.setPackage(packageName);
+			} else {
+				Log.e(TAG, "Error getting service or action name");
+				throw new IllegalArgumentException("You need to specify package a service or an action name.");
+			}
+			
 
 			String key = null;
 			PropType propType = null;
@@ -373,27 +405,38 @@ public class OMFProxyHandlers implements Constants{
 			if(resourceProps.get("parameters")!=null){
 				HashMap<String, Object> params = new HashMap<String, Object>((HashMap<String, Object>)((PropType)resourceProps.get("parameters")).getProp());
 				Iterator<Entry<String, Object>> it = params.entrySet().iterator();
-				    while (it.hasNext()) {
-				        Map.Entry<String, Object> pairs = (Map.Entry<String, Object>)it.next();
-				       
-				        key = pairs.getKey();
-				        propType =(PropType) pairs.getValue();
+				while (it.hasNext()) {
+			        Map.Entry<String, Object> pairs = (Map.Entry<String, Object>)it.next();
+			       
+			        key = pairs.getKey();
+			        propType =(PropType) pairs.getValue();
 
-				        if(propType.getType().equalsIgnoreCase("hash"))
-				        {
-				        	HashMap<String,Object> parameter = (HashMap<String,Object>)propType.getProp();
-      	
-				        	if(parameter.get("type")!=null && (((PropType)parameter.get("value")).getType().equalsIgnoreCase("string") || ((PropType)parameter.get("value")).getType().equalsIgnoreCase("integer")))
-				        	{
-				        		if(((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("EXTRA"))
-				        		{
-				        			Log.e(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
-				        		 	tmpintent.putExtra(key, ((String)((PropType)parameter.get("value")).getProp()));
-				        		}
-				        	}
-				        }
-				        it.remove(); // avoids a ConcurrentModificationException
-				    }
+			        if(propType.getType().equalsIgnoreCase("hash"))
+			        {
+			        	HashMap<String,Object> parameter = (HashMap<String,Object>)propType.getProp();
+  	
+			        	if(parameter.get("type")!=null && (((PropType)parameter.get("value")).getType().equalsIgnoreCase("string") || ((PropType)parameter.get("value")).getType().equalsIgnoreCase("integer")))
+			        	{
+			        		if(((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("EXTRA"))
+			        		{
+			        			Log.e(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
+			        		 	tmpintent.putExtra(key, ((String)((PropType)parameter.get("value")).getProp()));
+			        		} 
+			        	} else if ((parameter.get("type") != null) && ((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("INTENT")) {
+			        		//Log.e(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
+			        		if (key.equalsIgnoreCase("data_and_type")) {
+		        				//Log.e(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
+		        				HashMap<String, Object> data_type = (HashMap<String, Object>)((PropType)(parameter.get("value"))).getProp();
+		        				Uri data = Uri.parse((String)((PropType)data_type.get("data")).getProp());
+		        				String type = (String)((PropType)data_type.get("type")).getProp();
+		        				
+		        				Log.i(TAG,data+":"+type);
+		        				tmpintent.setDataAndType(data, type);
+			        		}
+			        	}
+			        }
+			        it.remove(); // avoids a ConcurrentModificationException
+			    }
 			}
 		}
 		else
@@ -479,10 +522,16 @@ public class OMFProxyHandlers implements Constants{
 							{
 								Log.i(TAG,"Starting application");
 								
-								if(platform.equalsIgnoreCase("android"))
+								if(platform.equalsIgnoreCase("android") && tmpintent != null)
 								{
-									Log.i(TAG, "Starting intent");
-									ctx.startService(tmpintent);
+									if (serviceName != null) {
+										Log.i(TAG, "Starting intent as a service");
+										ctx.startService(tmpintent);
+									} else if (actionName != null) {
+										Log.i(TAG, "Starting intent as an activity");
+										tmpintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+										ctx.startActivity(tmpintent);
+									}
 								}
 								else{
 									try {
@@ -499,7 +548,7 @@ public class OMFProxyHandlers implements Constants{
 										//Log.i(TAG,"Line 1st output:"+line);
 										int i = 1;
 										
-										//Output from the process needs sto run on a different thread otherwise it blocks the RC from handling messages
+										//Output from the process needs to run on a different thread otherwise it blocks the RC from handling messages
 										class MyThread implements Runnable {
 											String line;
 											BufferedReader bufferedReader;
@@ -568,11 +617,13 @@ public class OMFProxyHandlers implements Constants{
 							}
 							
 							if(((String)prop.getProp()).equalsIgnoreCase("stopped"))
-							{
-								Log.w(TAG,"Stoping background service");
+							{	
 								if(platform.equalsIgnoreCase("android"))
 								{
-									ctx.stopService(tmpintent);
+									if (serviceName != null) {
+										Log.w(TAG,"Stoping background service");
+										ctx.stopService(tmpintent);
+									}
 								}
 								else
 								{

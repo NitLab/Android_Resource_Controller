@@ -194,7 +194,7 @@ public class BackgroundService extends Service implements Constants{
 		Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
 		while (i.hasNext()) {
 			ActivityManager.RunningServiceInfo runningServiceInfo = (ActivityManager.RunningServiceInfo) i.next();
-			if (runningServiceInfo.service.getShortClassName().equals(serviceName)) {
+			if (runningServiceInfo.service.getClassName().equals(serviceName)) {
 				serviceRunning = true;
 			}
 		}
@@ -212,7 +212,8 @@ public class BackgroundService extends Service implements Constants{
 		notify.icon = R.drawable.nitlab_n_app_logo;
 		
 		// The service is not running
-		if(!isServiceRunning(("." + BackgroundService.class.getSimpleName()).trim())){
+		//if(!isServiceRunning(("." + BackgroundService.class.getSimpleName()).trim())){
+		if(!isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 			Intent start = new Intent();
 			start.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
 			// Notification that does not redirect to other Activities

@@ -91,7 +91,7 @@ public class SettingsActivity extends Activity implements Constants{
 						editor.commit();
 						
 						//If service is running disconnect and connect using the new credentials
-						if(isServiceRunning(".BackgroundService")){
+						if(isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 							stopService(intent);
 							Log.i(TAG,"Restarting service with new settings");
 							startService(intent);
@@ -129,7 +129,7 @@ public class SettingsActivity extends Activity implements Constants{
 		Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
 		while (i.hasNext()) {
 			ActivityManager.RunningServiceInfo runningServiceInfo = (ActivityManager.RunningServiceInfo) i.next();
-			if (runningServiceInfo.service.getShortClassName().equals(serviceName)) {
+			if (runningServiceInfo.service.getClassName().equals(serviceName)) {
 				serviceRunning = true;
 			}
 		}

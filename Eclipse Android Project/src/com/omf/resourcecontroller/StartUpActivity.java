@@ -87,7 +87,7 @@ public class StartUpActivity extends Activity {
 		super.onStart();
 		Log.i(TAG,"onStart");
 		
-		if(isServiceRunning(".BackgroundService")){
+		if(isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 			toggleService.setChecked(true);
 		}else{
 			toggleService.setChecked(false);
@@ -112,7 +112,7 @@ public class StartUpActivity extends Activity {
 				intent.addFlags(Service.START_STICKY);
 				intent.addFlags(Service.BIND_AUTO_CREATE);
 				
-				if(toggleService.isChecked() && !isServiceRunning(".BackgroundService")){
+				if(toggleService.isChecked() && !isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 						Log.i(TAG, "Start Service");
 						startService(intent);
 				}else {
@@ -134,7 +134,7 @@ public class StartUpActivity extends Activity {
 				Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
 				while (i.hasNext()) {
 					ActivityManager.RunningServiceInfo runningServiceInfo = (ActivityManager.RunningServiceInfo) i.next();
-					if (runningServiceInfo.service.getShortClassName().equals(serviceName)) {
+					if (runningServiceInfo.service.getClassName().equals(serviceName)) {
 						serviceRunning = true;
 					}
 				}

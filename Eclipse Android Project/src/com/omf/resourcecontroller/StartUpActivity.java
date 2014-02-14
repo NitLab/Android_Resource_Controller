@@ -11,7 +11,9 @@ import java.util.List;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -127,18 +129,14 @@ public class StartUpActivity extends Activity {
 	
 	// --- SERVICE CHECK CONTROL USING THE SYSTMEM
 			// Check if the service is running
-			public boolean isServiceRunning(String serviceName) {
-				boolean serviceRunning = false;
-				ActivityManager am = (ActivityManager) StartUpActivity.this.getSystemService(ACTIVITY_SERVICE);
-				List<ActivityManager.RunningServiceInfo> l = am.getRunningServices(50);
-				Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
-				while (i.hasNext()) {
-					ActivityManager.RunningServiceInfo runningServiceInfo = (ActivityManager.RunningServiceInfo) i.next();
-					if (runningServiceInfo.service.getClassName().equals(serviceName)) {
-						serviceRunning = true;
-					}
-				}
-				return serviceRunning;
-			}
+	public boolean isServiceRunning(String serviceName) {
+		ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+	        if (serviceName.equals(service.service.getClassName())) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
 
 }

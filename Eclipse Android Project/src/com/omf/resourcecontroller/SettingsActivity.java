@@ -6,11 +6,9 @@
 
 package com.omf.resourcecontroller;
 
-import java.util.Iterator;
-import java.util.List;
-
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -123,16 +121,12 @@ public class SettingsActivity extends Activity implements Constants{
 	}
 	
 	public boolean isServiceRunning(String serviceName) {
-		boolean serviceRunning = false;
-		ActivityManager am = (ActivityManager) SettingsActivity.this.getSystemService(ACTIVITY_SERVICE);
-		List<ActivityManager.RunningServiceInfo> l = am.getRunningServices(50);
-		Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
-		while (i.hasNext()) {
-			ActivityManager.RunningServiceInfo runningServiceInfo = (ActivityManager.RunningServiceInfo) i.next();
-			if (runningServiceInfo.service.getClassName().equals(serviceName)) {
-				serviceRunning = true;
-			}
-		}
-		return serviceRunning;
+		ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+	        if (serviceName.equals(service.service.getClassName())) {
+	            return true;
+	        }
+	    }
+	    return false;
 	}
 }

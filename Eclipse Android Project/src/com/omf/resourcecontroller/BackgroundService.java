@@ -11,6 +11,7 @@ package com.omf.resourcecontroller;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.jivesoftware.smack.XMPPConnection;
 
@@ -107,8 +108,8 @@ public class BackgroundService extends Service implements Constants{
 		Log.i(TAG,"Username: " + UnamePass);
 		Log.i(TAG,"Server: " + serverName);
 		
-		UnamePass = UnamePass.toLowerCase();	//XMPP openfire server does not support Upper case characters for accounts 
-		serverName = serverName.toLowerCase();	//But supports upper case characters for topic names so we lower the case to have the same name for everything
+		UnamePass = UnamePass.toLowerCase(Locale.ENGLISH);	//XMPP openfire server does not support Upper case characters for accounts 
+		serverName = serverName.toLowerCase(Locale.ENGLISH);	//But supports upper case characters for topic names so we lower the case to have the same name for everything
 		
 		Log.i(TAG,"Lowercase Username: " + UnamePass);
 		Log.i(TAG,"Lowercase Server: " + serverName);
@@ -143,7 +144,8 @@ public class BackgroundService extends Service implements Constants{
 	@Override
 	public void onStart(Intent intent, int startId) {
 		super.onStart(intent, startId);
-
+		//super.onstar
+		//super.handleStart(intent, startId);
 		//If internet exists start connection else display error message
 		if(isNetworkAvailable()){
 			xmpp = test.XMPPCreateConnection();

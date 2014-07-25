@@ -13,14 +13,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.harmony.javax.security.sasl.SaslException;
 import org.jivesoftware.smack.AccountManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackAndroid;
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.SmackException.NoResponseException;
+import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.pubsub.ConfigureForm;
 import org.jivesoftware.smackx.pubsub.FormType;
@@ -118,26 +123,27 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			// XMPP CONNECTION		
 			connConfig = new ConnectionConfiguration(serverName,PORT);
 			
-			connConfig.setSASLAuthenticationEnabled(true);
+			//connConfig.setSASLAuthenticationEnabled(true);
 			connConfig.setCompressionEnabled(true);
-			connConfig.setSecurityMode(SecurityMode.enabled);
-			
+			connConfig.setSecurityMode(SecurityMode.disabled);
+			/*
 			//Connection configuration - generates a warning on startup because the truststore path is set to null
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-				connConfig.setTruststoreType("AndroidCAStore");
-				connConfig.setTruststorePassword(null);
-				connConfig.setTruststorePath(null);
+				connConfig.setKeystoreType("AndroidCAStore");
+				//connConfig.setKeystorePassword(null);
+				connConfig.setKeystorePath(null);
+				//connConfig.set
 			} else {
-				connConfig.setTruststoreType("BKS");
+				connConfig.setKeystoreType("BKS");
 			    String path = System.getProperty("javax.net.ssl.trustStore");
 			    if (path == null)
 			        path = System.getProperty("java.home") + File.separatorChar + "etc"
 			            + File.separatorChar + "security" + File.separatorChar
 			            + "cacerts.bks";
-			    connConfig.setTruststorePath(path);
+			    connConfig.setKeystorePath(path);
 			}
-			
-			xmpp = new XMPPConnection(connConfig);
+			*/
+			xmpp = new XMPPTCPConnection(connConfig);
 			
 		}
 		
@@ -158,6 +164,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				Log.d(TAG, "Check device connectivity or server name");
 				//xmpp = null;
 				return null;
+			} catch (SmackException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			
 			//Add connection listener
@@ -166,7 +178,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				xmpp.addConnectionListener(connectionListener);
 						
 				//Add ping manager to deal with disconnections (after 6 minutes idle, xmpp disconnects)
-				PingManager.getInstanceFor(xmpp).setPingIntervall(5*60*1000);	//5 minutes (5*60*1000 in millisecons)
+				PingManager.getInstanceFor(xmpp).setPingInterval(5*60*1000);	//5 minutes (5*60*1000 in millisecons)
 
 				//Do Login
 				XMPPLogin(xmpp,Username,Password);
@@ -175,7 +187,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				if(xmpp.isAuthenticated()){
 					//Declare presence
 					Presence presence = new Presence(Presence.Type.available);
-					xmpp.sendPacket(presence);
+					try {
+						xmpp.sendPacket(presence);
+					} catch (NotConnectedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				
 				//Add pubsub manager
@@ -218,12 +235,30 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 								} catch (XMPPException e1) {	
 									Log.e(TAG,"XMPP Login failed");
 									return false;
+								} catch (SaslException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								} catch (SmackException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								} catch (IOException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
 								}	
 							}
 						} catch (XMPPException e1) {
 							Log.e(TAG,"Registration failed");
 							return false;
 						}
+				} catch (SaslException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SmackException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 			return false;
@@ -284,7 +319,19 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 							e1.printStackTrace();
 							Log.e(TAG, "Problem creating node "+topicName);
 							return null;
+						} catch (NoResponseException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						} catch (NotConnectedException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
 						}
+					} catch (NoResponseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (NotConnectedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 					
 					
@@ -316,6 +363,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 						e.printStackTrace();
 						Log.e(TAG, "Problem subscribing "+topicName);
 						return null;
+					} catch (NoResponseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (NotConnectedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 					
 					//Here put publication of inform message
@@ -334,20 +387,41 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		 */
 		public boolean registerUser(XMPPConnection mycon, String username, String  pass) throws XMPPException{
 			if(mycon != null && username!= null && pass != null){
-				AccountManager mgr = mycon.getAccountManager();
-	
-				if (mgr.supportsAccountCreation ())
-			    {
-			        mgr.createAccount (username, pass);
-			    }
+				Log.i(TAG, "Trying to register the user...!");
+				//AccountManager mgr = mycon.getAccountManager();
+				AccountManager mgr = AccountManager.getInstance(mycon);
+				try {
+					if (mgr.supportsAccountCreation ())
+					{
+					    mgr.createAccount (username, pass);
+					}
+				} catch (NoResponseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NotConnectedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				Log.i(TAG, "Account created: "+username);
 				
 				//XMPP refresh connection
 				if(mycon!= null)
 				{
 					flag=false;
-					mycon.disconnect();
-					mycon.connect(); 
+					try {
+						mycon.disconnect();
+						mycon.connect(); 
+					} catch (NotConnectedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SmackException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
 					//flag=true;
 					Log.i(TAG, "XMPP connection refresh ");
 				}
@@ -370,7 +444,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				//destroy all topics and remove their listeners
 				destroyTopics();
 				if(xmpp != null)
-					xmpp.disconnect();
+					try {
+						xmpp.disconnect();
+					} catch (NotConnectedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 			}
 			xmpp = null;
 		}
@@ -395,6 +474,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			} catch (XMPPException e) {
 				Log.e(TAG,"Problem deleting node "+topicName);
 				return false;
+			} catch (NoResponseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NotConnectedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		    
 		    return true;
@@ -414,6 +499,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					pubmgr.deleteNode(key);
 				} catch (XMPPException e) {
 					Log.e(TAG, "Node deletion problem");
+					e.printStackTrace();
+				} catch (NoResponseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NotConnectedException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -629,6 +720,18 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 	         public void reconnectingIn(int seconds) {
 	             Log.d("SMACK","Connection will reconnect in " + seconds);
 	         }
+
+			@Override
+			public void authenticated(XMPPConnection arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void connected(XMPPConnection arg0) {
+				// TODO Auto-generated method stub
+				
+			}
 		}
 		
 		

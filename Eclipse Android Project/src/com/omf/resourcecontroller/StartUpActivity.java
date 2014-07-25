@@ -6,9 +6,6 @@
 
 package com.omf.resourcecontroller;
 
-import java.util.Iterator;
-import java.util.List;
-
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;

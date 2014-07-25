@@ -6,6 +6,7 @@
 
 package com.omf.resourcecontroller.OMF;
 
+import org.jivesoftware.smack.SmackException.NotConnectedException;
 import org.jivesoftware.smackx.pubsub.LeafNode;
 import org.jivesoftware.smackx.pubsub.Node;
 import org.jivesoftware.smackx.pubsub.PayloadItem;
@@ -34,7 +35,12 @@ public class MessagePublisher {
 		
 		Log.e(TAG, "Message Published to:"+pubNode.getId());
 		
-		((LeafNode)pubNode).publish(payloadItem);
+		try {
+			((LeafNode)pubNode).publish(payloadItem);
+		} catch (NotConnectedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 			
 	}
 }

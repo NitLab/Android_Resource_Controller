@@ -306,7 +306,7 @@ public class OMFProxyHandlers implements Constants{
 	 * @param toTopic : to which topic the resource proxy replies
 	 * @param nodes : HashMap of the created Nodes by the RC
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	public List<String> OMFApplicationHandler(OMFMessage message, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Node> nodes) throws IllegalArgumentException {
 		
 		Log.e(TAG, "IN APP HANDLER");

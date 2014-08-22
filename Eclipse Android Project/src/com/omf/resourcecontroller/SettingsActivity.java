@@ -18,6 +18,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 
 /**
  * Settings Activity
@@ -31,10 +33,17 @@ public class SettingsActivity extends Activity implements Constants{
 	private Button submitBtn;
 	private String username;
 	private String server;
+	private int selectedRadioId;
+	private RadioButton radioSelected;
+	private RadioGroup connectionGroup;
 	
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_settings);
+		
+		//RadioGroup
+		connectionGroup = (RadioGroup)findViewById(R.id.radioGroup1);
+		
 		
 		submitBtn = (Button)findViewById(R.id.button1);
 		usernameField   = (EditText)findViewById(R.id.editText1);
@@ -52,8 +61,10 @@ public class SettingsActivity extends Activity implements Constants{
 						intent.addFlags(Service.START_STICKY);
 						intent.addFlags(Service.BIND_AUTO_CREATE);
 						
+						selectedRadioId = connectionGroup.getCheckedRadioButtonId();
+						radioSelected = (RadioButton) findViewById(selectedRadioId);
 						
-						SharedPreferences settings = getSharedPreferences("XMPPSettings", Context.MODE_PRIVATE);
+						SharedPreferences settings = getSharedPreferences("ConnectionSettings", Context.MODE_PRIVATE);
 
 						SharedPreferences.Editor editor = settings.edit();
 						
@@ -85,6 +96,10 @@ public class SettingsActivity extends Activity implements Constants{
 		            		//editor.putString("server", server);
 		            	}
 						
+		            	//ConnectionType Shared preference
+		            	Log.e(TAG,"CONNECTION: "+radioSelected.getText().toString());
+		            	editor.putString("connectionType", radioSelected.getText().toString());
+		            	
 						//Commit to shared preferences
 						editor.commit();
 						

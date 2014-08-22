@@ -30,7 +30,10 @@
 	<string name="configuration">Configuration</string>
 	
 	<string name="uid">UID:</string>
-	<string name="uri">XMPP Server:</string>
+	<string name="uri">Server Name:</string>
+	
+	<string name="radioXMPP">XMPP</string>
+    <string name="radioAMQP">AMQP</string>
 	
 	<string name="hint1">nitos.android.IMEI</string>
 	<string name="hint2">nitlab.inf.uth.gr</string>

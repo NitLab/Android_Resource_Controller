@@ -29,9 +29,10 @@ import android.os.IBinder;
 import android.os.StrictMode;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.omf.resourcecontroller.OMF.OMFMessage;
-import com.omf.resourcecontroller.OMF.XMPPClass;
+import com.omf.resourcecontroller.OMF.XMPPCommunicator;
 /**
  * Background service 
  * @author Polychronis Symeonidis
@@ -46,7 +47,7 @@ public class BackgroundService extends Service implements Constants{
 	private TelephonyManager  telephonyMgr = null;
 	
 	// XMPP variables
-	private XMPPClass test = null;
+	private XMPPCommunicator XMPPComm = null;
 	//OMF message object
 	OMFMessage omfMessage = null;
 	
@@ -58,9 +59,14 @@ public class BackgroundService extends Service implements Constants{
 	
 	//ServerName
 	private String serverName = null;
-	 
+	//Connection Type (XMPP or AMQP)
+	
+	private String connType = null;
+	
 	private XMPPConnection xmpp = null; 
-	 
+	
+	
+	
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
@@ -79,6 +85,10 @@ public class BackgroundService extends Service implements Constants{
 		
 		// TelephonyMgr
 		telephonyMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+		
+		//Toasts
+		
+		
 		
 		
 		
@@ -101,12 +111,14 @@ public class BackgroundService extends Service implements Constants{
 		 }
 
 		//Get saved settings if they exist otherwise start connection with default values
-		SharedPreferences settings = getSharedPreferences("XMPPSettings", Context.MODE_PRIVATE);
+		SharedPreferences settings = getSharedPreferences("ConnectionSettings", Context.MODE_PRIVATE);
 		UnamePass = settings.getString("username", "nitos.android."+topicName);	//if shared preference does not exist return default value android.omf.IMEI
-		serverName = settings.getString("server", DEFAULT_SERVER);
+		serverName = settings.getString("server", DEFAULT_SERVER);//Default server = XMPP nitlab.inf.uth.gr
+		connType = settings.getString("connectionType", "XMPP"); //Default Connection type = XMPP
 		
 		Log.i(TAG,"Username: " + UnamePass);
 		Log.i(TAG,"Server: " + serverName);
+		Log.i(TAG,"ConnectionType: " + connType);
 		
 		UnamePass = UnamePass.toLowerCase(Locale.ENGLISH);	//XMPP openfire server does not support Upper case characters for accounts 
 		serverName = serverName.toLowerCase(Locale.ENGLISH);	//But supports upper case characters for topic names so we lower the case to have the same name for everything
@@ -121,23 +133,37 @@ public class BackgroundService extends Service implements Constants{
 		StrictMode.setThreadPolicy(policy);
 		
 		// XMPP CONNECTION
-		
-		test = new XMPPClass(UnamePass, UnamePass, UnamePass, serverName, getApplicationContext());
+		if(connType.equalsIgnoreCase("XMPP"))
+		{
+			XMPPComm = new XMPPCommunicator(UnamePass, UnamePass, UnamePass, serverName, getApplicationContext());
+		}
+		else if(connType.equalsIgnoreCase("XMPP"))
+		{
+			//TODO AMQPCommunicator
+		}
+			
+			
 	}
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		
-		// CLOSE CONNECTION
-		if(test != null && xmpp!=null)
-			test.destroyConnection();
-		
-		test = null;
-		
-		displayNotificationMessage("XMPP stopped");
-		
-		Log.i(TAG,"XMPP stopped");
+		if(connType.equalsIgnoreCase("XMPP")){
+			// CLOSE CONNECTION
+			if(XMPPComm != null && xmpp!=null)
+				XMPPComm.destroyConnection();
+			
+			XMPPComm = null;
+			Toast toast4 = Toast.makeText(getApplicationContext(), "Disconnecting...", Toast.LENGTH_LONG);
+			toast4.show();
+			displayNotificationMessage("XMPP stopped");
+			
+			Log.i(TAG,"XMPP stopped");
+		}
+		else if (connType.equalsIgnoreCase("AMQP"))
+		{
+			displayNotificationMessage("AMQP Connection not supported yet!");
+		}
 	}
 
 	
@@ -146,26 +172,36 @@ public class BackgroundService extends Service implements Constants{
 		super.onStart(intent, startId);
 		//super.onstar
 		//super.handleStart(intent, startId);
-		//If internet exists start connection else display error message
-		if(isNetworkAvailable()){
-			xmpp = test.XMPPCreateConnection();
-			if(xmpp!=null){
-				displayNotificationMessage("XMPP started");
-				Log.i(TAG,"XMPP started");
+		//If an internet connection exists start connection else display error message
+		if(connType.equalsIgnoreCase("XMPP")){
+			Toast toast1 = Toast.makeText(getApplicationContext(), "Connecting to "+ serverName +" using the username "+ UnamePass, Toast.LENGTH_LONG);
+			toast1.show();
+			if(isNetworkAvailable()){
+				xmpp = XMPPComm.XMPPCreateConnection();
+				if(xmpp!=null){
+					displayNotificationMessage("XMPP started");
+					Toast toast3 = Toast.makeText(getApplicationContext(), "Connected!", Toast.LENGTH_LONG);
+					toast3.show();
+					Log.i(TAG,"XMPP started");
+				}
+				else{
+					Toast toast2 = Toast.makeText(getApplicationContext(), "Connection failed!", Toast.LENGTH_LONG);
+					toast2.show();
+					displayNotificationMessage("Check server name and uid!");
+					Log.e(TAG,"Connection failed");
+					Log.e(TAG,"Check server and uid");
+				}
 			}
-			else{
-				displayNotificationMessage("Check server name and uid!");
-				Log.e(TAG,"Connection failed");
-				Log.e(TAG,"Check server and uid");
+			else
+			{
+				displayNotificationMessage("Check internet connectivity");
+				Log.e(TAG,"Internet connection unavailable");
 			}
 		}
-		else
+		else if (connType.equalsIgnoreCase("AMQP"))
 		{
-			displayNotificationMessage("Check internet connectivity");
-			Log.e(TAG,"Internet connection unavailable");
+			displayNotificationMessage("AMQP Connection not supported yet!");
 		}
-		
-		
 	}
 	
 	

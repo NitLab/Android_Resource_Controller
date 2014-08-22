@@ -1,4 +1,4 @@
-package com.omf.resourcecontroller.XMLgenerator;
+package com.omf.resourcecontroller.generator;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -25,7 +25,7 @@ public class XMLGenerator implements Constants{
 	 * @param properties : properties of the inform message, if the exist
 	 * @return
 	 */
-	public String informMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType, HashMap<String, Object> properties){
+	public OMFMessage informMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType, HashMap<String, Object> properties){
 		OMFMessage message = new OMFMessage();
 		message.setMessageType("inform");
 		message.setMessageID(UUID.randomUUID().toString());
@@ -58,10 +58,10 @@ public class XMLGenerator implements Constants{
 		
 
 		message.setType(iType);
-		return message.toXML();
+		return message;
 	}
 	
-	public String createMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
+	public OMFMessage createMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
 		OMFMessage message = new OMFMessage();
 		message.setMessageType("create");
 		message.setMessageID(UUID.randomUUID().toString());
@@ -70,10 +70,10 @@ public class XMLGenerator implements Constants{
 		message.setCid(incomingMessage.getMessageID());
 		message.setType(iType);
 		
-		return message.toXML();
+		return message;
 	}
 	
-	public String releaseMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
+	public OMFMessage releaseMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
 		OMFMessage message = new OMFMessage();
 		message.setMessageType("release");
 		message.setMessageID(UUID.randomUUID().toString());
@@ -82,10 +82,10 @@ public class XMLGenerator implements Constants{
 		message.setCid(incomingMessage.getMessageID());
 		message.setType(iType);
 		
-		return message.toXML();
+		return message;
 	}
 	
-	public String configureMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
+	public OMFMessage configureMessage(String Topic, String serverName, OMFMessage incomingMessage, String iType){
 		OMFMessage message = new OMFMessage();
 		message.setMessageType("configure");
 		message.setMessageID(UUID.randomUUID().toString());
@@ -96,21 +96,8 @@ public class XMLGenerator implements Constants{
 		
 		
 		
-		return message.toXML();
+		return message;
 	}
 	
-	/**
-	 * addProperties
-	 * adds properties to a hashmap so that they can be used to generate an omf message
-	 * @param props : HashMap<String, Object> props Object
-	 * @param propName : property name tag
-	 * @param propType : property type (String, array,hash, integer)
-	 * @returns HashMap<String, Object> : properties
-	 */
-	public HashMap<String, Object> addProperties(HashMap<String, Object> props,String propName,PropType propType)
-	{
-		
-		props.put(propName, propType);
-		return props;
-	}
+	
 }

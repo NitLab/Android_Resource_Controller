@@ -6,7 +6,6 @@
 
 package com.omf.resourcecontroller.OMF;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,11 +37,11 @@ import org.jivesoftware.smackx.pubsub.listener.ItemEventListener;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.Log;
 
 import com.omf.resourcecontroller.Constants;
-import com.omf.resourcecontroller.XMLgenerator.XMLGenerator;
+import com.omf.resourcecontroller.generator.PropertiesGenerator;
+import com.omf.resourcecontroller.generator.XMLGenerator;
 import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 /**
@@ -54,7 +53,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 
 
-	public class XMPPClass implements Constants{
+	public class XMPPCommunicator implements Constants{
 		
 		public static final String TAG = "XMPPClass";
 		//private XMPPConnectThread conthread = null;
@@ -99,7 +98,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 	 * @param Server : XMPP Server name
 	 * @param appContext : The application context
 	 */
-		public XMPPClass(String username, String password, String topicName, String Server, Context appContext){
+		public XMPPCommunicator(String username, String password, String topicName, String Server, Context appContext){
 			
 			NodeListeners = new HashMap<String, ItemEventCoordinator>();
 			Nodes = new HashMap<String, Node>();
@@ -112,7 +111,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			
 			serverName = Server;
 			
-			msgPub = new MessagePublisher();
+			msgPub = new MessagePublisher("XMPP");
 			
 			//Init aSmack
 			SmackAndroid.init(ctx);
@@ -671,9 +670,9 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				        				{
 				        					memberships = OMFMainHandler(omfMessage, listensTo, memberships, replysTo, properties);
 				        				}
-				        				Log.e(TAG, "############################################");
+				        				Log.w(TAG, "############################################");
 				        				Log.i(TAG,listensTo+"##"+item.toString());
-				        				Log.e(TAG, "############################################");
+				        				Log.w(TAG, "############################################");
 			        					//System.out.println(omfMessage.toString());
 			        				}
 			        		}
@@ -749,13 +748,18 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			
 			//XML Generator for the MainHandler
 			XMLGenerator xmlGen = new XMLGenerator();
+			PropertiesGenerator propGen = new PropertiesGenerator();
 			RegularExpression regEx = new RegularExpression();
-			String xmlPayload = null;
+			//String xmlPayload = null;
+			OMFMessage genOMFmessage = new OMFMessage();
 			Node mainNode = Nodes.get(toTopic);
 			HashMap<String, Object> propsMap = null;
 			
 			String myUid ="xmpp://"+fromTopic+"@"+serverName;
 			String myResType = "Android OMF 6 Resource Controller";
+			
+			//I should add all the supported resource proxies
+			
 			
 			System.out.println(incomingMessage);
 			OMFMessage message = new OMFMessage(incomingMessage);
@@ -779,11 +783,11 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					{
 						propsMap = new HashMap<String, Object>();
 						
-						propsMap = xmlGen.addProperties(propsMap, "res_id", new PropType(appTopicUri,"string"));
+						propsMap = propGen.addProperties(propsMap, "res_id", new PropType(appTopicUri,"string"));
 						
 						//send inform to application node only with res_id as property
-						xmlPayload = xmlGen.informMessage(appTopicName, serverName, null, "CREATION.OK", propsMap);
-						msgPub.PublishItem(xmlPayload, SCHEMA, "inform", applicationNode);
+						genOMFmessage = xmlGen.informMessage(appTopicName, serverName, null, "CREATION.OK", propsMap);
+						msgPub.PublishItem(genOMFmessage, "inform", applicationNode);
 							
 						//Check if message contains membership property
 						//If property membership exists
@@ -804,7 +808,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 									//Send Inform to main topic
 	
 									//inform message to answer
-									xmlPayload = xmlGen.informMessage(appTopicName, serverName, message, "STATUS", propsMap);
+									genOMFmessage = xmlGen.informMessage(appTopicName, serverName, message, "STATUS", propsMap);
 									
 									
 									//Subscribe to membership, or create the topic
@@ -813,22 +817,21 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 									newNode = createTopic(membershipTopic,true,message.getType(), appTopicName, tempList,message.getPropertiesHashmap());
 									
 									//add membership array
-									propsMap = xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(tempList,"array"));
+									propsMap = propGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(tempList,"array"));
 									
 									//add hrn
 									if(message.getProperty("hrn")!=null)
 									{
 										if(((PropType)message.getProperty("hrn")).getType().equalsIgnoreCase("string"))
 										{
-											propsMap = xmlGen.addProperties(propsMap, "hrn", new PropType((String)(((PropType)message.getProperty("hrn")).getProp()),"string"));
+											propsMap = propGen.addProperties(propsMap, "hrn", new PropType((String)(((PropType)message.getProperty("hrn")).getProp()),"string"));
 										}
 									}
 									
 									//Add this membership to my membership list
-									xmlPayload = xmlGen.informMessage(appTopicName, serverName, null, "STATUS", propsMap);	//Send that i subscribed to membership
-									
+									genOMFmessage = xmlGen.informMessage(appTopicName, serverName, null, "STATUS", propsMap);	//Send that i subscribed to membership
 									//publish outcome of membership to the new "member" node and to the original topic?()
-									msgPub.PublishItem(xmlPayload, SCHEMA, "inform", newNode);
+									msgPub.PublishItem(genOMFmessage, "inform", newNode);
 									
 									
 								}
@@ -836,13 +839,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 								propsMap = new HashMap<String, Object>();
 								propsMap.putAll(message.getPropertiesHashmap());
-								propsMap = xmlGen.addProperties(propsMap, "res_id", new PropType(appTopicUri,"string"));
-								propsMap = xmlGen.addProperties(propsMap, "uid", new PropType(appTopicName,"string"));
+								propsMap = propGen.addProperties(propsMap, "res_id", new PropType(appTopicUri,"string"));
+								propsMap = propGen.addProperties(propsMap, "uid", new PropType(appTopicName,"string"));
 								
 						
-								xmlPayload = xmlGen.informMessage(Topic, serverName, message, "CREATION.OK", propsMap);
-							
-								msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+								genOMFmessage = xmlGen.informMessage(Topic, serverName, message, "CREATION.OK", propsMap);
+								msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 							}
 						}
 						
@@ -850,16 +852,16 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					else
 					{
 						//send inform to main node
-						xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "CREATION.FAILED", xmlGen.addProperties(new HashMap<String, Object>(), "reason", new PropType("Uknown error prevented the creation of the resource "+message.getType(),"string")));
-						msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+						genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "CREATION.FAILED", propGen.addProperties(new HashMap<String, Object>(), "reason", new PropType("Uknown error prevented the creation of the resource "+message.getType(),"string")));
+						msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 					}
 					
 				}
 				else
 				{
 					//send inform to main node
-					xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "CREATION.FAILED", xmlGen.addProperties(new HashMap<String, Object>(), "reason", new PropType("Unknown type of resource '"+message.getType()+"'","string")));
-					msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+					genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "CREATION.FAILED", propGen.addProperties(new HashMap<String, Object>(), "reason", new PropType("Unknown type of resource '"+message.getType()+"'","string")));
+					msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 				}
 				
 				//createTopic((String)message.getProperty("uid"),true, message.getType());
@@ -888,35 +890,35 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 							if(checkMembership(memberships, membership)){
 								//inform message to answer
-								xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "STATUS", xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));
-								msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+								genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));
+								msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 							
 								//Subscribe to membership, or create the topic
-								newNode = createTopic(membershipTopic,false,"", membershipTopic, null, null);//i kathusterimeni malakia eftaige
+								newNode = createTopic(membershipTopic,false,"", membershipTopic, null, null);
 								memberships.add(membership);																																			//Add this membership to my membership list
 							}
 							else
 							{
 								//inform message to answer
-								xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "STATUS", xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));
-								msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+								genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));
+								msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 								
 								newNode = Nodes.get(membershipTopic);
 							}
 							
-							xmlPayload = xmlGen.informMessage(toTopic, serverName, null, "STATUS", xmlGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));	//Send that i subscribed to membership
+							genOMFmessage = xmlGen.informMessage(toTopic, serverName, null, "STATUS", propGen.addProperties(new HashMap<String,Object>(), "membership", new PropType(memberships,"array")));	//Send that i subscribed to membership
 								
 							//publish outcome of membership to the new "member" node and to the original topic
-							msgPub.PublishItem(xmlPayload, SCHEMA, "inform", newNode);
-							msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+							msgPub.PublishItem(genOMFmessage, "inform", newNode);
+							msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 						}
 					}
 				}
 				else
 				{
 					//reply with error
-					xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "ERROR", null);
-					msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+					genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "ERROR", null);
+					msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 				}
 				
 				
@@ -929,17 +931,16 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				
 				if(message.getProperty("uid")!=null)
 				{
-					propsMap = xmlGen.addProperties(propsMap, "uid", new PropType(myUid,"string"));
-					propsMap = xmlGen.addProperties(propsMap, "type", new PropType(myResType,"string"));
+					propsMap = propGen.addProperties(propsMap, "uid", new PropType(myUid,"string"));
+					propsMap = propGen.addProperties(propsMap, "type", new PropType(myResType,"string"));
 				}
 				if(message.getProperty("res_id")!=null)
-					propsMap = xmlGen.addProperties(propsMap, "res_id", new PropType(myResType,"string"));
+					propsMap = propGen.addProperties(propsMap, "res_id", new PropType(myResType,"string"));
 				
 				//Add this membership to my membership list
-				xmlPayload = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propsMap);	//Send that i subscribed to membership
-				
+				genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propsMap);	//Send that i subscribed to membership
 				//publish outcome of membership to the new "member" node and to the original topic?()
-				msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 				//message.OMFRequest();
 			}
 			else if (message.getMessageType().equalsIgnoreCase("inform"))
@@ -959,7 +960,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				if(outcome)
 				{
 					//inform released
-					xmlPayload = xmlGen.informMessage(message.getResID(), serverName, message, "RELEASED", null);
+					genOMFmessage = xmlGen.informMessage(message.getResID(), serverName, message, "RELEASED", null);
 					//System.out.println("#######"+xmlPayload);
 					
 					
@@ -967,14 +968,11 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				else
 				{
 					//inform failed-error
-					xmlPayload = xmlGen.informMessage(message.getResID(), serverName, message, "ERROR", null);
+					genOMFmessage = xmlGen.informMessage(message.getResID(), serverName, message, "ERROR", null);
 					//PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
 				}	
-				
-				msgPub.PublishItem(xmlPayload, SCHEMA, "inform", mainNode);
+				msgPub.PublishItem(genOMFmessage, "inform", mainNode);
 				//send inform to application node only with res_id as property
-				
-				
 			}
 			
 			return memberships;

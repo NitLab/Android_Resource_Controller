@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 
 import org.jivesoftware.smackx.pubsub.Node;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -26,16 +27,18 @@ import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import com.omf.resourcecontroller.Constants;
-import com.omf.resourcecontroller.XMLgenerator.XMLGenerator;
+import com.omf.resourcecontroller.generator.PropertiesGenerator;
+import com.omf.resourcecontroller.generator.XMLGenerator;
 
 
 
-public class OMFProxyHandlers implements Constants{
+public class OMFProxyHandlers implements Constants {
 
 	//Properties HashMap
 	HashMap<String, Object> properties;
 
 	XMLGenerator xmlGen;
+	PropertiesGenerator propGen;
 	Context ctx;
 	String uid;
 	//Process HashMap -- Which processes have been started from the RC
@@ -44,18 +47,22 @@ public class OMFProxyHandlers implements Constants{
 	private MessagePublisher msgPub;
 	private String serverName;
 	private Thread tempThread;
+	//SharedPreferences settings = getSharedPreferences("ConnectionSettings", Context.MODE_PRIVATE);
 	
 	public static final String TAG = "ResourceProxyHandler";
 	
 	public OMFProxyHandlers(HashMap<String, Object> newProps, Context appContext, String topicName, String Server)
 	{
+		
+		String connType = appContext.getSharedPreferences("ConnectionSettings", Context.MODE_PRIVATE).getString("connectionType", "XMPP");//Default XMPP
 		properties = new HashMap<String, Object> (newProps);
 		xmlGen = new XMLGenerator();
+		propGen = new PropertiesGenerator();
 		ctx = appContext;
 		ProcessesPID = new HashMap<String, String>();
 		Processes = new HashMap<String ,Process>();
 		uid = topicName;
-		msgPub = new MessagePublisher();
+		msgPub = new MessagePublisher(connType);
 		serverName = Server;
 	}
 	
@@ -73,7 +80,7 @@ public class OMFProxyHandlers implements Constants{
 		//Device Managers
 		WifiManager wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
 		
-		Log.e(TAG, "IN WLAN HANDLER");
+		Log.i(TAG, "IN WLAN HANDLER");
 		HashMap<String, Object> resourceProps =new HashMap<String, Object>(this.properties);
 		//HashMap<String, Node> Nodes = new HashMap<String, Node>(nodes);  //currently unused
 		RegularExpression regEx = new RegularExpression();
@@ -104,12 +111,12 @@ public class OMFProxyHandlers implements Constants{
 		
 		if(((PropType)resourceProps.get("hrn"))!= null && ((PropType)resourceProps.get("hrn")).getType().equalsIgnoreCase("string")){
 			hrn = (String)((PropType)resourceProps.get("hrn")).getProp();
-			Log.e(TAG, "assign hrn: "+hrn);
+			Log.i(TAG, "assign hrn: "+hrn);
 		}
 		
 		if(((PropType)resourceProps.get("if_name"))!= null && ((PropType)resourceProps.get("if_name")).getType().equalsIgnoreCase("string")){
 			ifName = (String)((PropType)resourceProps.get("if_name")).getProp();
-			Log.e(TAG, "Assign interface name: " + ifName);
+			Log.i(TAG, "Assign interface name: " + ifName);
 		}
 		
 		
@@ -198,9 +205,9 @@ public class OMFProxyHandlers implements Constants{
 			    //Split ip and subnet
 			    if(IPaddressSubnet!=null){
 			    	IPaddress = regEx.ipaddressReg(IPaddressSubnet);
-			    	Log.e(TAG,"IP:"+IPaddress);
+			    	Log.i(TAG,"IP:"+IPaddress);
 			    	subnet = regEx.subnetReg(IPaddressSubnet);
-			    	Log.e(TAG,"subnet:"+subnet);
+			    	Log.i(TAG,"subnet:"+subnet);
 			    }
 			    
 			    if(SSID!=null){
@@ -212,7 +219,7 @@ public class OMFProxyHandlers implements Constants{
 				    {
 				    	if(security.equalsIgnoreCase("WEP"))
 				    	{
-				    		Log.e(TAG,"Wep security");
+				    		Log.i(TAG,"Wep security");
 					    	newConf.wepKeys[0] = "\"" + securityKey + "\""; 
 							newConf.wepTxKeyIndex = 0;
 							newConf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
@@ -220,18 +227,18 @@ public class OMFProxyHandlers implements Constants{
 				    	}
 				    	else if(security.equalsIgnoreCase("WPA"))
 				    	{
-				    		Log.e(TAG,"Wpa security");
+				    		Log.i(TAG,"Wpa security");
 				    		
 				    		newConf.preSharedKey = "\""+ securityKey +"\"";
 				    	}
 				    }
 				    else{
 				    	//open network
-				    	Log.e(TAG,"Open network");
+				    	Log.i(TAG,"Open network");
 				    	newConf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
 				    }
 				    
-				    Log.e(TAG,"SSID: "+SSID);
+				    Log.i(TAG,"SSID: "+SSID);
 				    
 				    //add network to wifi manager
 				    wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
@@ -248,17 +255,17 @@ public class OMFProxyHandlers implements Constants{
 			    
 			    if((wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) || (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLING))
 			    {
-			    	Log.e(TAG, "if wifi state disabled shouldnt reach.");
+			    	Log.i(TAG, "if wifi state disabled shouldnt reach.");
 			    	//enable network
 				    List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
 				    for( WifiConfiguration i : list ) {
 				        if(i.SSID != null && i.SSID.equals("\"" + SSID + "\"")) {
-				        	Log.e(TAG,"Disconnect wifi");
+				        	Log.i(TAG,"Disconnect wifi");
 				             wifiManager.disconnect();
 				            Log.i(TAG,i.SSID.toString());
 				             wifiManager.enableNetwork(i.networkId, true);
 				            
-				             Log.e(TAG,"Reconnect wifi");
+				             Log.i(TAG,"Reconnect wifi");
 				             wifiManager.reconnect();               
 	
 				             break;
@@ -309,7 +316,7 @@ public class OMFProxyHandlers implements Constants{
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	public List<String> OMFApplicationHandler(OMFMessage message, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Node> nodes) throws IllegalArgumentException {
 		
-		Log.e(TAG, "IN APP HANDLER");
+		Log.i(TAG, "IN APP HANDLER");
 		HashMap<String, Object> resourceProps =new HashMap<String, Object>(this.properties);
 		HashMap<String, Node> Nodes = new HashMap<String, Node>(nodes);
 		
@@ -329,21 +336,21 @@ public class OMFProxyHandlers implements Constants{
 		
 		String platform = "android_shell";
 		Process p = null;
-		Log.e(TAG, "i LISTEN TO: " +fromTopic);
+		Log.i(TAG, "i LISTEN TO: " +fromTopic);
 		Log.i(TAG,resourceProps.toString());
-		Log.e(TAG,"i SEND TO:" + toTopic);
+		Log.i(TAG,"i SEND TO:" + toTopic);
 		if(((PropType)resourceProps.get("platform"))!= null){
 			platform = (String)((PropType)resourceProps.get("platform")).getProp();
-			Log.e(TAG, "IN PLATFORM ASSIGNMENT");
+			Log.i(TAG, "IN PLATFORM ASSIGNMENT");
 		}
 		
 		
 		if(((PropType)resourceProps.get("hrn"))!= null && ((PropType)resourceProps.get("hrn")).getType().equalsIgnoreCase("string")){
 			hrn = (String)((PropType)resourceProps.get("hrn")).getProp();
-			Log.e(TAG, "assign hrn");
+			Log.i(TAG, "assign hrn");
 		}
 		
-		Log.e(TAG, "IS PLATFORM ANDROID = "+platform);
+		Log.i(TAG, "IS PLATFORM ANDROID = "+platform);
 		
 		//Assuming these properties are standard
 		if(platform.equalsIgnoreCase("android"))
@@ -351,7 +358,7 @@ public class OMFProxyHandlers implements Constants{
 			if(resourceProps.get("description")!=null)
 			{
 				appDescription = (String)((PropType)resourceProps.get("description")).getProp();
-				Log.e(TAG, appDescription +" uid:"+ this.uid);
+				Log.i(TAG, appDescription +" uid:"+ this.uid);
 			}
 			
 			//appId = (String)((PropType)resourceProps.get("app_id")).getProp();
@@ -372,7 +379,7 @@ public class OMFProxyHandlers implements Constants{
 				actionName = (String)((PropType) binary_path.get("action")).getProp();
 			}
 			
-			Log.e(TAG,"NAME:"+ packageName + "." + serviceName + " " + actionName);
+			Log.w(TAG,"NAME:"+ packageName + "." + serviceName + " " + actionName);
 			
 			if (serviceName != null && actionName == null) {
 				tmpintent = new Intent();
@@ -401,7 +408,7 @@ public class OMFProxyHandlers implements Constants{
 			p = null;
 			
 	
-			Log.e(TAG, "Before loop");
+			Log.i(TAG, "Before loop");
 			if(resourceProps.get("parameters")!=null){
 				HashMap<String, Object> params = new HashMap<String, Object>((HashMap<String, Object>)((PropType)resourceProps.get("parameters")).getProp());
 				Iterator<Entry<String, Object>> it = params.entrySet().iterator();
@@ -419,7 +426,7 @@ public class OMFProxyHandlers implements Constants{
 			        	{
 			        		if(((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("EXTRA"))
 			        		{
-			        			Log.e(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
+			        			Log.w(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
 			        		 	tmpintent.putExtra(key, ((String)((PropType)parameter.get("value")).getProp()));
 			        		} 
 			        	} else if ((parameter.get("type") != null) && ((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("INTENT")) {
@@ -445,7 +452,7 @@ public class OMFProxyHandlers implements Constants{
 			if(resourceProps.get("description")!=null)
 			{
 				appDescription = (String)((PropType)resourceProps.get("description")).getProp();
-				Log.e(TAG, appDescription);
+				Log.i(TAG, appDescription);
 			}
 			
 			binPath = (String)((PropType)resourceProps.get("binary_path")).getProp();
@@ -457,10 +464,10 @@ public class OMFProxyHandlers implements Constants{
 			PropType propType = null;
 			p = null;
 			
-			Log.e(TAG, commandLineStart);
+			Log.i(TAG, commandLineStart);
 		
 			
-			Log.e(TAG, "Before loop");
+			Log.i(TAG, "Before loop");
 			if(resourceProps.get("parameters")!=null){
 				HashMap<String, Object> params = new HashMap<String, Object>((HashMap<String, Object>)((PropType)resourceProps.get("parameters")).getProp());
 				Iterator<Entry<String, Object>> it = params.entrySet().iterator();
@@ -494,7 +501,7 @@ public class OMFProxyHandlers implements Constants{
 				        }
 				        it.remove(); // avoids a ConcurrentModificationException
 				    }
-				    Log.e(TAG, "Command ready: "+commandLineStart);
+				    Log.i(TAG, "Command ready: "+commandLineStart);
 			}
 		
 		}
@@ -580,20 +587,23 @@ public class OMFProxyHandlers implements Constants{
 																//Log.w(TAG, "Shell output inside: "+line);
 																
 																HashMap<String, Object> props= new HashMap<String, Object>();
-																props = xmlGen.addProperties(props, "status_type", new PropType("APP_EVENT","string"));
-																props = xmlGen.addProperties(props, "event", new PropType("STDOUT","string"));
-																props = xmlGen.addProperties(props, "app", new PropType(hrn,"string"));
+																props = propGen.addProperties(props, "status_type", new PropType("APP_EVENT","string"));
+																props = propGen.addProperties(props, "event", new PropType("STDOUT","string"));
+																props = propGen.addProperties(props, "app", new PropType(hrn,"string"));
 																
 																//use trim because some outputs have trailing whitespaces and the connection closes because of that
-																props = xmlGen.addProperties(props, "msg", new PropType(line.trim(),"string")); 
-																props = xmlGen.addProperties(props, "seq", new PropType(String.valueOf(i),"string"));
-																props = xmlGen.addProperties(props, "uid", new PropType(this.uid,"string"));
-																props = xmlGen.addProperties(props, "hrn", new PropType(hrn,"string"));
+																props = propGen.addProperties(props, "msg", new PropType(line.trim(),"string")); 
+																props = propGen.addProperties(props, "seq", new PropType(String.valueOf(i),"string"));
+																props = propGen.addProperties(props, "uid", new PropType(this.uid,"string"));
+																props = propGen.addProperties(props, "hrn", new PropType(hrn,"string"));
 																
+																
+																//************Auta edw den prepei na einai mono gia to XMPP******************
 																//Log.e(TAG,fromTopic+" "+serverName+" "+props.toString());
-																String xmlPayload = xmlGen.informMessage(fromTopic, serverName, null, "STATUS", props);
+																OMFMessage genOMFmessage = xmlGen.informMessage(fromTopic, serverName, null, "STATUS", props);
 																//Log.e(TAG,xmlPayload);
-																msgPub.PublishItem(xmlPayload, SCHEMA, "inform", Nodes.get(fromTopic));
+																msgPub.PublishItem(genOMFmessage, "inform", Nodes.get(fromTopic));
+																//***********Auta edw den prepei na einai mono gia to XMPP********************
 																i++;
 																
 															}
@@ -636,7 +646,7 @@ public class OMFProxyHandlers implements Constants{
 											p=Runtime.getRuntime().exec("su -c kill -9 "+pid); //kill process -- requires rooted device otherwise process will continue to run
 											
 											tempThread.stop();	//stop thread
-											Log.e(TAG, "Process with PID: "+pid+" destroyed");
+											Log.w(TAG, "Process with PID: "+pid+" destroyed");
 											ProcessesPID.remove(fromTopic);
 											Processes.remove(fromTopic);
 										
@@ -647,7 +657,7 @@ public class OMFProxyHandlers implements Constants{
 											Log.i(TAG, "Shell output: "+line);
 										}
 									} catch (IOException e) {
-										Log.e(TAG, "Service not found!");
+										Log.e(TAG, "Process not found!");
 										e.printStackTrace();
 									}
 								}
@@ -656,10 +666,10 @@ public class OMFProxyHandlers implements Constants{
 					}
 					else if(message.getProperty("parameters")!=null)
 					{
-						Log.e(TAG,"Changing properties");
+						Log.w(TAG,"Changing properties");
 						this.properties =new HashMap<String, Object>(message.getPropertiesHashmap());
 						resourceProps =new HashMap<String, Object>(this.properties);
-						Log.e(TAG,this.properties.toString());
+						Log.i(TAG,this.properties.toString());
 						
 						String key = null;
 						PropType propType = null;
@@ -694,10 +704,10 @@ public class OMFProxyHandlers implements Constants{
 							        					{
 							        						broadcastIntent.setPackage(packageName);
 							        						String action = packageName+"."+(String)((PropType)parameter.get("action")).getProp();
-							        						Log.e(TAG, action);
+							        						Log.i(TAG, action);
 							        						broadcastIntent.setAction(action);
 							        						String configuredValue = ((String)((PropType)parameter.get("value")).getProp());
-							        						Log.e(TAG, key+": "+configuredValue);
+							        						Log.i(TAG, key+": "+configuredValue);
 							        						broadcastIntent.putExtra(key, configuredValue);
 							        						
 							        					}

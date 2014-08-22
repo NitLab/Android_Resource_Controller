@@ -17,7 +17,7 @@ import com.omf.resourcecontroller.Constants;
 public class OMFMessage implements Constants{
 	
 	//Object variables
-	private String  messageType;
+	private String  messageType; //referred as "op" in the OMF FRCP - json
 	private String messageID;
 	private Long ts;
 	private String src;

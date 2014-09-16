@@ -34,7 +34,8 @@ public class XMPPParserV2 implements Constants {
 	 * @throws XmlPullParserException 
 	 * @returns OMFMessage: HashMap that contains XML element names as keys and their values
 	 */
-	public static final String TAG = "XML Paser";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "XML Paser v2";
 	
 	private XmlPullParserFactory factory= null;
 	boolean props = false;			//flag for properties
@@ -77,7 +78,7 @@ public class XMPPParserV2 implements Constants {
 	        		 //System.out.println("|DEBUG: "+xpp.getName());
 	        		 if(!xpp.getNamespace().equals(SCHEMA))
 	        		 {//SCHEMA doesnt comply with OMF 6.0 Protocol
-	        			 Log.e(TAG,"ERROR: Not OMF 6.0 message");
+	        			 Log.e(appTAG,classTAG+": ERROR: Not OMF 6.0 message");
 	        			 return message; //return empty message
 	        		 }
 	        		 //get message id and message type

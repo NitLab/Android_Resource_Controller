@@ -10,11 +10,15 @@
     
     <uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+	<uses-permission android:name="android.permission.READ_LOGS" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.WRITE_SETTINGS"></uses-permission>
+	<uses-permission android:name="android.permission.READ_LOGS" />
+	<uses-permission android:name="android.permission.READ_LOGS" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	
     <application
         android:allowBackup="true"
@@ -33,7 +37,7 @@
         
         <activity
             android:name="com.omf.resourcecontroller.SettingsActivity"
-            />
+        />
             
         
 
@@ -42,6 +46,9 @@
         <service 
             android:name="com.omf.resourcecontroller.BackgroundService"
             android:title="@string/title_activity_background_service" />
+        <service
+            android:name="com.omf.resourcecontroller.LoggerService"
+            android:title="@string/title_activity_logger_service" />
         
     </application>
 

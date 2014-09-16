@@ -17,7 +17,6 @@ import java.util.Map.Entry;
 
 import org.jivesoftware.smackx.pubsub.Node;
 
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -48,8 +47,8 @@ public class OMFProxyHandlers implements Constants {
 	private String serverName;
 	private Thread tempThread;
 	//SharedPreferences settings = getSharedPreferences("ConnectionSettings", Context.MODE_PRIVATE);
-	
-	public static final String TAG = "ResourceProxyHandler";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "ResourceProxyHandler";
 	
 	public OMFProxyHandlers(HashMap<String, Object> newProps, Context appContext, String topicName, String Server)
 	{
@@ -80,7 +79,7 @@ public class OMFProxyHandlers implements Constants {
 		//Device Managers
 		WifiManager wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
 		
-		Log.i(TAG, "IN WLAN HANDLER");
+		Log.i(appTAG, classTAG+": IN WLAN HANDLER");
 		HashMap<String, Object> resourceProps =new HashMap<String, Object>(this.properties);
 		//HashMap<String, Node> Nodes = new HashMap<String, Node>(nodes);  //currently unused
 		RegularExpression regEx = new RegularExpression();
@@ -111,17 +110,17 @@ public class OMFProxyHandlers implements Constants {
 		
 		if(((PropType)resourceProps.get("hrn"))!= null && ((PropType)resourceProps.get("hrn")).getType().equalsIgnoreCase("string")){
 			hrn = (String)((PropType)resourceProps.get("hrn")).getProp();
-			Log.i(TAG, "assign hrn: "+hrn);
+			Log.i(appTAG, classTAG+": assign hrn: "+hrn);
 		}
 		
 		if(((PropType)resourceProps.get("if_name"))!= null && ((PropType)resourceProps.get("if_name")).getType().equalsIgnoreCase("string")){
 			ifName = (String)((PropType)resourceProps.get("if_name")).getProp();
-			Log.i(TAG, "Assign interface name: " + ifName);
+			Log.i(appTAG, classTAG+": Assign interface name: " + ifName);
 		}
 		
 		
 		if(resourceProps.get("mode")!=null && ((PropType)resourceProps.get("mode")).getType().equalsIgnoreCase("hash")){
-			Log.w(TAG,"In mode");
+			Log.w(appTAG,classTAG+": In mode");
 			@SuppressWarnings("unchecked")
 			HashMap<String, Object> settings = new HashMap<String, Object>((HashMap<String, Object>)((PropType)resourceProps.get("mode")).getProp());
 			Iterator<Entry<String, Object>> it = settings.entrySet().iterator();
@@ -137,57 +136,57 @@ public class OMFProxyHandlers implements Constants {
 			        	if(key.equalsIgnoreCase("phy"))
 			        	{
 			        		phy = ((String)(propType.getProp()));
-			        		Log.w(TAG,"phy: " + phy);
+			        		Log.w(appTAG,classTAG+": phy: " + phy);
 			        	}
 			        	else if(key.equalsIgnoreCase("IP_addr"))
 			        	{
 			        		IPaddressSubnet = ((String)(propType.getProp()));
-			        		Log.w(TAG,"IP: " + IPaddressSubnet);
+			        		Log.w(appTAG,classTAG+": IP: " + IPaddressSubnet);
 			        	}
 			        	else if(key.equalsIgnoreCase("hw_mode"))
 			        	{
 			        		hwMode = ((String)(propType.getProp()));
-			        		Log.w(TAG,"hw mode: "+hwMode);
+			        		Log.w(appTAG,classTAG+": hw mode: "+hwMode);
 			        	}
 			        	else if(key.equalsIgnoreCase("essid"))
 			        	{
 			        		SSID = ((String)(propType.getProp()));
-			        		Log.w(TAG,"ESSID: " + SSID);
+			        		Log.w(appTAG,classTAG+": ESSID: " + SSID);
 			        	}
 			        	else if(key.equalsIgnoreCase("channel"))
 			        	{
 			        		channel = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Channel: "+channel);
+			        		Log.w(appTAG,classTAG+": Channel: "+channel);
 			        	}
 			        	else if(key.equalsIgnoreCase("mode"))
 			        	{
 			        		mode = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Mode: "+mode);
+			        		Log.w(appTAG,classTAG+": Mode: "+mode);
 			        	}
 			        	else if(key.equalsIgnoreCase("dns"))
 			        	{
 			        		dns = ((String)(propType.getProp()));
-			        		Log.w(TAG,"DNS: "+dns);
+			        		Log.w(appTAG,classTAG+": DNS: "+dns);
 			        	}
 			        	else if(key.equalsIgnoreCase("gateway"))
 			        	{
 			        		gateway = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Gateway: "+gateway);
+			        		Log.w(appTAG,classTAG+": Gateway: "+gateway);
 			        	}
 			        	else if(key.equalsIgnoreCase("security"))
 			        	{
 			        		security = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Security type: "+gateway);
+			        		Log.w(appTAG,classTAG+": Security type: "+gateway);
 			        	}
 			        	else if(key.equalsIgnoreCase("security_key"))
 			        	{
 			        		securityKey = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Security key: " + securityKey);
+			        		Log.w(appTAG,classTAG+": Security key: " + securityKey);
 			        	}
 			        	else if(key.equalsIgnoreCase("state"))
 			        	{
 			        		WifiState = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Wifi state: " + WifiState);
+			        		Log.w(appTAG,classTAG+": Wifi state: " + WifiState);
 			        	}
 			        }
 			        else if(propType.getType().equalsIgnoreCase("integer"))
@@ -196,7 +195,7 @@ public class OMFProxyHandlers implements Constants {
 			        	{
 			        		//frequency is sent as an integer but i parse it as a String
 			        		frequency = ((String)(propType.getProp()));
-			        		Log.w(TAG,"Frequency: "+frequency);
+			        		Log.w(appTAG,classTAG+": Frequency: "+frequency);
 			        	}
 			        }
 			        it.remove(); // avoids a ConcurrentModificationException
@@ -205,9 +204,9 @@ public class OMFProxyHandlers implements Constants {
 			    //Split ip and subnet
 			    if(IPaddressSubnet!=null){
 			    	IPaddress = regEx.ipaddressReg(IPaddressSubnet);
-			    	Log.i(TAG,"IP:"+IPaddress);
+			    	Log.i(appTAG,classTAG+": IP:"+IPaddress);
 			    	subnet = regEx.subnetReg(IPaddressSubnet);
-			    	Log.i(TAG,"subnet:"+subnet);
+			    	Log.i(appTAG,classTAG+": subnet:"+subnet);
 			    }
 			    
 			    if(SSID!=null){
@@ -219,7 +218,7 @@ public class OMFProxyHandlers implements Constants {
 				    {
 				    	if(security.equalsIgnoreCase("WEP"))
 				    	{
-				    		Log.i(TAG,"Wep security");
+				    		Log.i(appTAG,classTAG+": Wep security");
 					    	newConf.wepKeys[0] = "\"" + securityKey + "\""; 
 							newConf.wepTxKeyIndex = 0;
 							newConf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
@@ -227,18 +226,18 @@ public class OMFProxyHandlers implements Constants {
 				    	}
 				    	else if(security.equalsIgnoreCase("WPA"))
 				    	{
-				    		Log.i(TAG,"Wpa security");
+				    		Log.i(appTAG,classTAG+": Wpa security");
 				    		
 				    		newConf.preSharedKey = "\""+ securityKey +"\"";
 				    	}
 				    }
 				    else{
 				    	//open network
-				    	Log.i(TAG,"Open network");
+				    	Log.i(appTAG,classTAG+": Open network");
 				    	newConf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
 				    }
 				    
-				    Log.i(TAG,"SSID: "+SSID);
+				    Log.i(appTAG,classTAG+": SSID: "+SSID);
 				    
 				    //add network to wifi manager
 				    wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
@@ -255,17 +254,17 @@ public class OMFProxyHandlers implements Constants {
 			    
 			    if((wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) || (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLING))
 			    {
-			    	Log.i(TAG, "if wifi state disabled shouldnt reach.");
+			    	Log.i(appTAG, classTAG+": if wifi state disabled shouldnt reach.");
 			    	//enable network
 				    List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
 				    for( WifiConfiguration i : list ) {
 				        if(i.SSID != null && i.SSID.equals("\"" + SSID + "\"")) {
-				        	Log.i(TAG,"Disconnect wifi");
+				        	Log.i(appTAG,classTAG+": Disconnect wifi");
 				             wifiManager.disconnect();
-				            Log.i(TAG,i.SSID.toString());
+				            Log.i(appTAG,classTAG+": " +i.SSID.toString());
 				             wifiManager.enableNetwork(i.networkId, true);
 				            
-				             Log.i(TAG,"Reconnect wifi");
+				             Log.i(appTAG,classTAG+": Reconnect wifi");
 				             wifiManager.reconnect();               
 	
 				             break;
@@ -285,7 +284,7 @@ public class OMFProxyHandlers implements Constants {
 		}
 		else if (message.getMessageType().equalsIgnoreCase("configure"))
 		{
-				
+				//na kanw configure to interface otan pairnw wlan gia na upostirizw to settarisma tis IP
 		}
 		else if (message.getMessageType().equalsIgnoreCase("request"))
 		{
@@ -316,7 +315,7 @@ public class OMFProxyHandlers implements Constants {
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	public List<String> OMFApplicationHandler(OMFMessage message, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Node> nodes) throws IllegalArgumentException {
 		
-		Log.i(TAG, "IN APP HANDLER");
+		Log.i(appTAG, classTAG+": IN APP HANDLER");
 		HashMap<String, Object> resourceProps =new HashMap<String, Object>(this.properties);
 		HashMap<String, Node> Nodes = new HashMap<String, Node>(nodes);
 		
@@ -336,21 +335,21 @@ public class OMFProxyHandlers implements Constants {
 		
 		String platform = "android_shell";
 		Process p = null;
-		Log.i(TAG, "i LISTEN TO: " +fromTopic);
-		Log.i(TAG,resourceProps.toString());
-		Log.i(TAG,"i SEND TO:" + toTopic);
+		Log.i(appTAG, classTAG+": i LISTEN TO: " +fromTopic);
+		Log.i(appTAG,classTAG+": "+resourceProps.toString());
+		Log.i(appTAG,classTAG+": i SEND TO:" + toTopic);
 		if(((PropType)resourceProps.get("platform"))!= null){
 			platform = (String)((PropType)resourceProps.get("platform")).getProp();
-			Log.i(TAG, "IN PLATFORM ASSIGNMENT");
+			Log.i(appTAG, classTAG+": IN PLATFORM ASSIGNMENT");
 		}
 		
 		
 		if(((PropType)resourceProps.get("hrn"))!= null && ((PropType)resourceProps.get("hrn")).getType().equalsIgnoreCase("string")){
 			hrn = (String)((PropType)resourceProps.get("hrn")).getProp();
-			Log.i(TAG, "assign hrn");
+			Log.i(appTAG, classTAG+": assign hrn");
 		}
 		
-		Log.i(TAG, "IS PLATFORM ANDROID = "+platform);
+		Log.i(appTAG, classTAG+": IS PLATFORM ANDROID = "+platform);
 		
 		//Assuming these properties are standard
 		if(platform.equalsIgnoreCase("android"))
@@ -358,7 +357,7 @@ public class OMFProxyHandlers implements Constants {
 			if(resourceProps.get("description")!=null)
 			{
 				appDescription = (String)((PropType)resourceProps.get("description")).getProp();
-				Log.i(TAG, appDescription +" uid:"+ this.uid);
+				Log.i(appTAG, classTAG+": "+appDescription +" uid:"+ this.uid);
 			}
 			
 			//appId = (String)((PropType)resourceProps.get("app_id")).getProp();
@@ -367,7 +366,7 @@ public class OMFProxyHandlers implements Constants {
 			if (binary_path.get("package") != null) {
 				packageName = (String)((PropType) binary_path.get("package")).getProp();
 			} else {
-				Log.e(TAG, "Error getting package name.");
+				Log.e(appTAG, classTAG+": Error getting package name.");
 				throw new IllegalArgumentException("You need to specify a package name.");
 			}
 			
@@ -379,7 +378,7 @@ public class OMFProxyHandlers implements Constants {
 				actionName = (String)((PropType) binary_path.get("action")).getProp();
 			}
 			
-			Log.w(TAG,"NAME:"+ packageName + "." + serviceName + " " + actionName);
+			Log.w(appTAG,classTAG+": NAME:"+ packageName + "." + serviceName + " " + actionName);
 			
 			if (serviceName != null && actionName == null) {
 				tmpintent = new Intent();
@@ -398,7 +397,7 @@ public class OMFProxyHandlers implements Constants {
 				
 				tmpintent.setPackage(packageName);
 			} else {
-				Log.e(TAG, "Error getting service or action name");
+				Log.e(appTAG, classTAG+": Error getting service or action name");
 				throw new IllegalArgumentException("You need to specify package a service or an action name.");
 			}
 			
@@ -408,7 +407,7 @@ public class OMFProxyHandlers implements Constants {
 			p = null;
 			
 	
-			Log.i(TAG, "Before loop");
+			Log.i(appTAG, classTAG+": Before loop");
 			if(resourceProps.get("parameters")!=null){
 				HashMap<String, Object> params = new HashMap<String, Object>((HashMap<String, Object>)((PropType)resourceProps.get("parameters")).getProp());
 				Iterator<Entry<String, Object>> it = params.entrySet().iterator();
@@ -426,7 +425,7 @@ public class OMFProxyHandlers implements Constants {
 			        	{
 			        		if(((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("EXTRA"))
 			        		{
-			        			Log.w(TAG,key+":"+((String)((PropType)parameter.get("value")).getProp()));
+			        			Log.w(appTAG,classTAG+": "+key+":"+((String)((PropType)parameter.get("value")).getProp()));
 			        		 	tmpintent.putExtra(key, ((String)((PropType)parameter.get("value")).getProp()));
 			        		} 
 			        	} else if ((parameter.get("type") != null) && ((String)((PropType)parameter.get("type")).getProp()).equalsIgnoreCase("INTENT")) {
@@ -437,7 +436,7 @@ public class OMFProxyHandlers implements Constants {
 		        				Uri data = Uri.parse((String)((PropType)data_type.get("data")).getProp());
 		        				String type = (String)((PropType)data_type.get("type")).getProp();
 		        				
-		        				Log.i(TAG,data+":"+type);
+		        				Log.i(appTAG,classTAG+": "+data+":"+type);
 		        				tmpintent.setDataAndType(data, type);
 			        		}
 			        	}
@@ -452,7 +451,7 @@ public class OMFProxyHandlers implements Constants {
 			if(resourceProps.get("description")!=null)
 			{
 				appDescription = (String)((PropType)resourceProps.get("description")).getProp();
-				Log.i(TAG, appDescription);
+				Log.i(appTAG, classTAG+": "+appDescription);
 			}
 			
 			binPath = (String)((PropType)resourceProps.get("binary_path")).getProp();
@@ -464,10 +463,10 @@ public class OMFProxyHandlers implements Constants {
 			PropType propType = null;
 			p = null;
 			
-			Log.i(TAG, commandLineStart);
+			Log.i(appTAG, classTAG+": "+commandLineStart);
 		
 			
-			Log.i(TAG, "Before loop");
+			Log.i(appTAG, classTAG+": Before loop");
 			if(resourceProps.get("parameters")!=null){
 				HashMap<String, Object> params = new HashMap<String, Object>((HashMap<String, Object>)((PropType)resourceProps.get("parameters")).getProp());
 				Iterator<Entry<String, Object>> it = params.entrySet().iterator();
@@ -501,23 +500,23 @@ public class OMFProxyHandlers implements Constants {
 				        }
 				        it.remove(); // avoids a ConcurrentModificationException
 				    }
-				    Log.i(TAG, "Command ready: "+commandLineStart);
+				    Log.i(appTAG, classTAG+": Command ready: "+commandLineStart);
 			}
 		
 		}
 			
 		if(message.getMessageType().equalsIgnoreCase("create"))
 		{
-			Log.i(TAG,fromTopic+": "+"create");
+			Log.i(appTAG,classTAG+": "+fromTopic+": "+"create");
 		}
 		else if (message.getMessageType().equalsIgnoreCase("configure"))
 		{
-			Log.i(TAG,fromTopic+": "+"Configure");
+			Log.i(appTAG,classTAG+": "+fromTopic+": "+"Configure");
 			
 			if(message.getGuard("type")==null || ((String)((PropType)message.getGuard("type")).getProp()).equalsIgnoreCase((String)((PropType)resourceProps.get("type")).getProp())){
-				Log.i(TAG, "Passed guard: Type");
+				Log.i(appTAG, classTAG+": Passed guard: Type");
 				if(message.getGuard("name")==null || ((String)((PropType)message.getGuard("name")).getProp()).equalsIgnoreCase((String)((PropType)resourceProps.get("hrn")).getProp())){
-					Log.i(TAG, "Passed guard: name");
+					Log.i(appTAG, classTAG+": Passed guard: name");
 					if(message.getProperty("state")!=null)
 					{
 						PropType prop = (PropType)message.getProperty("state");
@@ -527,22 +526,22 @@ public class OMFProxyHandlers implements Constants {
 		
 							if(((String)prop.getProp()).equalsIgnoreCase("running"))
 							{
-								Log.i(TAG,"Starting application");
+								Log.i(appTAG,classTAG+": Starting application");
 								
 								if(platform.equalsIgnoreCase("android") && tmpintent != null)
 								{
 									if (serviceName != null) {
-										Log.i(TAG, "Starting intent as a service");
+										Log.i(appTAG, classTAG+": Starting intent as a service");
 										ctx.startService(tmpintent);
 									} else if (actionName != null) {
-										Log.i(TAG, "Starting intent as an activity");
+										Log.i(appTAG, classTAG+": Starting intent as an activity");
 										tmpintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 										ctx.startActivity(tmpintent);
 									}
 								}
 								else{
 									try {
-										Log.i(TAG,"Executing command");
+										Log.i(appTAG,classTAG+": Executing command");
 										p = Runtime.getRuntime().exec(commandLineStart);
 										
 										
@@ -609,7 +608,7 @@ public class OMFProxyHandlers implements Constants {
 															}
 														}
 												} catch (IOException e) {
-													Log.e(TAG,"Thread exception");
+													Log.e(appTAG,classTAG+": Thread exception");
 													e.printStackTrace();
 												}
 											   }
@@ -620,7 +619,7 @@ public class OMFProxyHandlers implements Constants {
 										tempThread.start();
 										
 									} catch (IOException e) {
-										Log.e(TAG, "Command not found");
+										Log.e(appTAG, classTAG+": Command not found");
 										e.printStackTrace();
 									}
 								}
@@ -631,7 +630,7 @@ public class OMFProxyHandlers implements Constants {
 								if(platform.equalsIgnoreCase("android"))
 								{
 									if (serviceName != null) {
-										Log.w(TAG,"Stoping background service");
+										Log.w(appTAG,classTAG+": Stoping background service");
 										ctx.stopService(tmpintent);
 									}
 								}
@@ -641,12 +640,12 @@ public class OMFProxyHandlers implements Constants {
 										
 										String pid = ProcessesPID.get(fromTopic);
 										//Process proc = Processes.get(fromTopic); //currently unused
-										Log.i(TAG,"Kill procces:" +pid);
+										Log.i(appTAG,classTAG+": Kill procces:" +pid);
 											
 											p=Runtime.getRuntime().exec("su -c kill -9 "+pid); //kill process -- requires rooted device otherwise process will continue to run
 											
 											tempThread.stop();	//stop thread
-											Log.w(TAG, "Process with PID: "+pid+" destroyed");
+											Log.w(appTAG, classTAG+": Process with PID: "+pid+" destroyed");
 											ProcessesPID.remove(fromTopic);
 											Processes.remove(fromTopic);
 										
@@ -654,10 +653,10 @@ public class OMFProxyHandlers implements Constants {
 										String line;
 										while ((line = bufferedReader.readLine()) != null) 
 										{
-											Log.i(TAG, "Shell output: "+line);
+											Log.i(appTAG, classTAG+": Shell output: "+line);
 										}
 									} catch (IOException e) {
-										Log.e(TAG, "Process not found!");
+										Log.e(appTAG, classTAG+": Process not found!");
 										e.printStackTrace();
 									}
 								}
@@ -666,10 +665,10 @@ public class OMFProxyHandlers implements Constants {
 					}
 					else if(message.getProperty("parameters")!=null)
 					{
-						Log.w(TAG,"Changing properties");
+						Log.w(appTAG,classTAG+": Changing properties");
 						this.properties =new HashMap<String, Object>(message.getPropertiesHashmap());
 						resourceProps =new HashMap<String, Object>(this.properties);
-						Log.i(TAG,this.properties.toString());
+						Log.i(appTAG,classTAG+": "+this.properties.toString());
 						
 						String key = null;
 						PropType propType = null;
@@ -704,10 +703,10 @@ public class OMFProxyHandlers implements Constants {
 							        					{
 							        						broadcastIntent.setPackage(packageName);
 							        						String action = packageName+"."+(String)((PropType)parameter.get("action")).getProp();
-							        						Log.i(TAG, action);
+							        						Log.i(appTAG,classTAG+": "+ action);
 							        						broadcastIntent.setAction(action);
 							        						String configuredValue = ((String)((PropType)parameter.get("value")).getProp());
-							        						Log.i(TAG, key+": "+configuredValue);
+							        						Log.i(appTAG,classTAG+": "+ key+": "+configuredValue);
 							        						broadcastIntent.putExtra(key, configuredValue);
 							        						
 							        					}
@@ -731,15 +730,15 @@ public class OMFProxyHandlers implements Constants {
 		}
 		else if (message.getMessageType().equalsIgnoreCase("request"))
 		{
-			Log.i(TAG,fromTopic+": "+"request");
+			Log.i(appTAG,classTAG+": "+fromTopic+": "+"request");
 		}
 		else if (message.getMessageType().equalsIgnoreCase("inform"))
 		{
-			Log.i(TAG,fromTopic+": "+"inform");
+			Log.i(appTAG,classTAG+": "+fromTopic+": "+"inform");
 		}
 		else if (message.getMessageType().equalsIgnoreCase("release"))
 		{
-			Log.i(TAG,fromTopic+": "+"release");
+			Log.i(appTAG,classTAG+": "+fromTopic+": "+"release");
 		}
 		
 		return memberships;
@@ -750,7 +749,7 @@ public class OMFProxyHandlers implements Constants {
 
 		    
 		    public String getScanResultSecurity(ScanResult scanResult) {
-		        Log.i(TAG, "* getScanResultSecurity");
+		        Log.i(appTAG, classTAG+": * getScanResultSecurity");
 
 		        final String cap = scanResult.capabilities;
 		        final String[] securityModes = { "WEP", "PSK", "EAP" };

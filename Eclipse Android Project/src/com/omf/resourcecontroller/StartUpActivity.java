@@ -6,6 +6,8 @@
 
 package com.omf.resourcecontroller;
 
+import java.util.List;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -26,14 +28,16 @@ import android.widget.ToggleButton;
  *
  */
 public class StartUpActivity extends Activity {
-	
-	public static final String TAG = "StartUpActivity";
-
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "StartUpActivity";
+	//public static int loggerPid = -1;
 	private ToggleButton toggleService = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Log.i(appTAG,classTAG+": onCreate");
+		//On create execute the log command and kill on destroy...
 		setContentView(R.layout.activity_start_up);
 		
 		toggleService = (ToggleButton)findViewById(R.id.ToggleBtnServ);
@@ -72,19 +76,24 @@ public class StartUpActivity extends Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		Log.i(TAG,"onDestroy");
+		Log.i(appTAG,classTAG+": onDestroy");
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.i(TAG,"onResume");
+		Log.i(appTAG,classTAG+": onResume");
+	}
+	
+	protected void onPause() {
+		super.onPause();
+		Log.i(appTAG,classTAG+": onPause");
 	}
 
 	@Override
 	protected void onStart() {
 		super.onStart();
-		Log.i(TAG,"onStart");
+		Log.i(appTAG,classTAG+": onStart");
 		
 		if(isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 			toggleService.setChecked(true);
@@ -96,7 +105,7 @@ public class StartUpActivity extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		Log.i(TAG,"onStop");
+		Log.i(appTAG,classTAG+": onStop");
 	}
 	
 	/**
@@ -107,16 +116,23 @@ public class StartUpActivity extends Activity {
 		public void onClick(View v) {
 			
 			
-				Intent intent = new Intent(StartUpActivity.this, BackgroundService.class);
-				intent.addFlags(Service.START_STICKY);
-				intent.addFlags(Service.BIND_AUTO_CREATE);
+				Intent intent1 = new Intent(StartUpActivity.this, BackgroundService.class);
+				intent1.addFlags(Service.START_STICKY);
+				intent1.addFlags(Service.BIND_AUTO_CREATE);
+				
+				Intent loggerService = new Intent(StartUpActivity.this, LoggerService.class);
+				loggerService.addFlags(Service.START_STICKY);
+				loggerService.addFlags(Service.BIND_AUTO_CREATE);
 				
 				if(toggleService.isChecked() && !isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
-						Log.i(TAG, "Start Service");
-						startService(intent);
+						Log.i(appTAG, classTAG+": Start Service");
+						startService(loggerService);
+						startService(intent1);
+						
 				}else {
-					Log.i(TAG, "Stop Service");
-					stopService(intent);
+					Log.i(appTAG, classTAG+": Stop Service");
+					stopService(intent1);
+					stopService(loggerService);
 				}
 			
 		}
@@ -134,6 +150,24 @@ public class StartUpActivity extends Activity {
 	        }
 	    }
 	    return false;
+	}
+	
+	// --- Get pid of a process
+	
+	public int applicationPid(String applicationName) 
+	{
+		ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+	    List<ActivityManager.RunningAppProcessInfo> pids = am.getRunningAppProcesses();
+	             int processid = 0;
+	       for(int i = 0; i < pids.size(); i++)
+	       {
+	           ActivityManager.RunningAppProcessInfo info = pids.get(i);
+	           if(info.processName.equalsIgnoreCase(applicationName)){
+	              processid = info.pid;
+	           } 
+	       }
+	    Log.i(appTAG, classTAG+": OMF RC Pid: " + processid);
+		return processid;
 	}
 
 }

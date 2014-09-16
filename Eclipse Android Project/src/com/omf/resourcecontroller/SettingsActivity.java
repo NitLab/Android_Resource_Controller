@@ -27,7 +27,8 @@ import android.widget.RadioGroup;
  *
  */
 public class SettingsActivity extends Activity implements Constants{
-	public static final String TAG = "SettingsActivity";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "SettingsActivity";
 	private EditText usernameField;
 	private EditText serverField;
 	private Button submitBtn;
@@ -77,7 +78,7 @@ public class SettingsActivity extends Activity implements Constants{
 		            	}
 						else
 						{
-							Log.e(TAG, "Username text box empty");
+							Log.e(appTAG, classTAG+": Username text box empty");
 							//Log.i(TAG,"Default_server: " + server);
 						}
 		            	
@@ -90,14 +91,14 @@ public class SettingsActivity extends Activity implements Constants{
 		            	}
 		            	else
 		            	{
-		            		Log.e(TAG, "Server text box empty");
+		            		Log.e(appTAG, classTAG+": Server text box empty");
 		            		server = DEFAULT_SERVER;
-		            		Log.i(TAG,"Default server chosen: " + server);
+		            		Log.i(appTAG,classTAG+": Default server chosen: " + server);
 		            		//editor.putString("server", server);
 		            	}
 						
 		            	//ConnectionType Shared preference
-		            	Log.e(TAG,"CONNECTION: "+radioSelected.getText().toString());
+		            	Log.e(appTAG,classTAG+": CONNECTION: "+radioSelected.getText().toString());
 		            	editor.putString("connectionType", radioSelected.getText().toString());
 		            	
 						//Commit to shared preferences
@@ -106,7 +107,7 @@ public class SettingsActivity extends Activity implements Constants{
 						//If service is running disconnect and connect using the new credentials
 						if(isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 							stopService(intent);
-							Log.i(TAG,"Restarting service with new settings");
+							Log.i(appTAG,classTAG+": Restarting service with new settings");
 							startService(intent);
 						}
 						finish();
@@ -120,19 +121,19 @@ public class SettingsActivity extends Activity implements Constants{
 	
 	protected void onDestroy() {
 		super.onDestroy();
-		Log.i(TAG,"onDestroy");
+		Log.i(appTAG,classTAG+": onDestroy");
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.i(TAG,"onResume");
+		Log.i(appTAG,classTAG+": onResume");
 	}
 
 	@Override
 	protected void onStart() {
 		super.onStart();
-		Log.i(TAG,"onStart");
+		Log.i(appTAG,classTAG+": onStart");
 	}
 	
 	public boolean isServiceRunning(String serviceName) {

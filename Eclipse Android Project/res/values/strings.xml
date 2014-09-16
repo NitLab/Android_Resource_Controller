@@ -7,7 +7,7 @@
     
     <!-- SERVICE -->
     <string name="title_activity_background_service">BackgroundService</string>
-    
+    <string name="title_activity_logger_service">LoggerService</string>
     <!-- COLORS -->
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>

@@ -62,25 +62,26 @@ public final class R {
 	
  BUTTONS 
          */
-        public static final int btn_id=0x7f040004;
-        public static final int btn_service_start=0x7f040005;
-        public static final int btn_service_stop=0x7f040006;
-        public static final int configuration=0x7f04000a;
-        public static final int configure_button=0x7f040007;
-        public static final int hint1=0x7f04000f;
-        public static final int hint2=0x7f040010;
-        public static final int main_menu=0x7f040008;
+        public static final int btn_id=0x7f040005;
+        public static final int btn_service_start=0x7f040006;
+        public static final int btn_service_stop=0x7f040007;
+        public static final int configuration=0x7f04000b;
+        public static final int configure_button=0x7f040008;
+        public static final int hint1=0x7f040010;
+        public static final int hint2=0x7f040011;
+        public static final int main_menu=0x7f040009;
         public static final int menu_settings=0x7f040001;
-        public static final int nitlab_image=0x7f040011;
-        public static final int radioAMQP=0x7f04000e;
-        public static final int radioXMPP=0x7f04000d;
-        public static final int settings_menu=0x7f040009;
-        public static final int submit_btn=0x7f040012;
+        public static final int nitlab_image=0x7f040012;
+        public static final int radioAMQP=0x7f04000f;
+        public static final int radioXMPP=0x7f04000e;
+        public static final int settings_menu=0x7f04000a;
+        public static final int submit_btn=0x7f040013;
         /**  SERVICE 
          */
         public static final int title_activity_background_service=0x7f040003;
-        public static final int uid=0x7f04000b;
-        public static final int uri=0x7f04000c;
+        public static final int title_activity_logger_service=0x7f040004;
+        public static final int uid=0x7f04000c;
+        public static final int uri=0x7f04000d;
     }
     public static final class style {
         /** 

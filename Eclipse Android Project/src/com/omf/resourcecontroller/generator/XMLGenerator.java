@@ -5,15 +5,14 @@ import java.util.UUID;
 
 import com.omf.resourcecontroller.Constants;
 import com.omf.resourcecontroller.OMF.OMFMessage;
-import com.omf.resourcecontroller.OMF.PropType;
 /**
  * XML Generator, Generates OMF messages(inform messages at the moment)
  * @author Polychronis Symeonidis
  *
  */
 public class XMLGenerator implements Constants{
-	
-	public static final String TAG = "XMLGenerator";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "XMLGenerator";
 	
 	
 	/**

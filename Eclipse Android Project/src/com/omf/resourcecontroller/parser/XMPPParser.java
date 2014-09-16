@@ -16,7 +16,8 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import com.omf.resourcecontroller.OMF.OMFMessage;
 /**
- * Wrong parser
+ * Wrong parser i just havent deleted it
+ * The correct XML parser is the XMPPParserV2
  * @author Polychronis Symeonidis
  *
  */
@@ -28,7 +29,8 @@ public class XMPPParser {
 	 * @throws XmlPullParserException 
 	 * @returns OMFMessage: HashMap that contains XML element names as keys and their values
 	 */
-	public static final String TAG = "BackgroundService";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "Old xml parser";
 	
 	public OMFMessage XMLParse (String XMLstring) throws XmlPullParserException, IOException{
 			//Parser factory

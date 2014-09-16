@@ -40,7 +40,8 @@ import com.omf.resourcecontroller.OMF.XMPPCommunicator;
  */
 public class BackgroundService extends Service implements Constants{
 
-	public static final String TAG = "BackgroundService";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "BackgroundService";
 	
 	// Service variables
 	private NotificationManager notificationMgr = null;		//	NOTIFICATION MANAGER
@@ -116,15 +117,15 @@ public class BackgroundService extends Service implements Constants{
 		serverName = settings.getString("server", DEFAULT_SERVER);//Default server = XMPP nitlab.inf.uth.gr
 		connType = settings.getString("connectionType", "XMPP"); //Default Connection type = XMPP
 		
-		Log.i(TAG,"Username: " + UnamePass);
-		Log.i(TAG,"Server: " + serverName);
-		Log.i(TAG,"ConnectionType: " + connType);
+		Log.i(appTAG,classTAG+": Username: " + UnamePass);
+		Log.i(appTAG,classTAG+": Server: " + serverName);
+		Log.i(appTAG,classTAG+": ConnectionType: " + connType);
 		
 		UnamePass = UnamePass.toLowerCase(Locale.ENGLISH);	//XMPP openfire server does not support Upper case characters for accounts 
 		serverName = serverName.toLowerCase(Locale.ENGLISH);	//But supports upper case characters for topic names so we lower the case to have the same name for everything
 		
-		Log.i(TAG,"Lowercase Username: " + UnamePass);
-		Log.i(TAG,"Lowercase Server: " + serverName);
+		Log.i(appTAG,classTAG+": Lowercase Username: " + UnamePass);
+		Log.i(appTAG,classTAG+": Lowercase Server: " + serverName);
 		
 		/////////////	THREAD POLICY
 		
@@ -158,7 +159,7 @@ public class BackgroundService extends Service implements Constants{
 			toast4.show();
 			displayNotificationMessage("XMPP stopped");
 			
-			Log.i(TAG,"XMPP stopped");
+			Log.i(appTAG,classTAG+": XMPP stopped");
 		}
 		else if (connType.equalsIgnoreCase("AMQP"))
 		{
@@ -167,6 +168,7 @@ public class BackgroundService extends Service implements Constants{
 	}
 
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onStart(Intent intent, int startId) {
 		super.onStart(intent, startId);
@@ -182,20 +184,20 @@ public class BackgroundService extends Service implements Constants{
 					displayNotificationMessage("XMPP started");
 					Toast toast3 = Toast.makeText(getApplicationContext(), "Connected!", Toast.LENGTH_LONG);
 					toast3.show();
-					Log.i(TAG,"XMPP started");
+					Log.i(appTAG,classTAG+": XMPP started");
 				}
 				else{
 					Toast toast2 = Toast.makeText(getApplicationContext(), "Connection failed!", Toast.LENGTH_LONG);
 					toast2.show();
 					displayNotificationMessage("Check server name and uid!");
-					Log.e(TAG,"Connection failed");
-					Log.e(TAG,"Check server and uid");
+					Log.e(appTAG,classTAG+": Connection failed");
+					Log.e(appTAG,classTAG+": Check server and uid");
 				}
 			}
 			else
 			{
 				displayNotificationMessage("Check internet connectivity");
-				Log.e(TAG,"Internet connection unavailable");
+				Log.e(appTAG,classTAG+": Internet connection unavailable");
 			}
 		}
 		else if (connType.equalsIgnoreCase("AMQP"))
@@ -244,6 +246,7 @@ public class BackgroundService extends Service implements Constants{
 	 * Displays a notification message on the device screen
 	 * @param message : the message to be displayed as a notification
 	 */
+	@SuppressWarnings("deprecation")
 	private void displayNotificationMessage(String message) {
 		Notification notify = new Notification(android.R.drawable.stat_notify_chat, message, System.currentTimeMillis());
 		notify.flags = Notification.FLAG_AUTO_CANCEL;

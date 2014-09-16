@@ -18,8 +18,8 @@ import com.omf.resourcecontroller.Constants;
 
 public class MessagePublisher implements Constants{
 
-	
-	public static final String TAG = "MessagePublisher";
+	public static final String appTAG = "com.omf.resourcecontroller";
+	public static final String classTAG = "MessagePublisher";
 	public String connectionType;
 	
 	public MessagePublisher(String connType){
@@ -58,7 +58,7 @@ public class MessagePublisher implements Constants{
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		PayloadItem payloadItem = new PayloadItem(null, payload);
 		
-		Log.i(TAG, "Message Published to:"+pubNode.getId());
+		Log.i(appTAG, classTAG+": Message Published to:"+pubNode.getId());
 		
 		try {
 			((LeafNode)pubNode).publish(payloadItem);

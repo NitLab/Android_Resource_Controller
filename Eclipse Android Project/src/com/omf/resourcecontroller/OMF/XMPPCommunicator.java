@@ -54,8 +54,8 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 
 
 	public class XMPPCommunicator implements Constants{
-		
-		public static final String TAG = "XMPPClass";
+		public static final String appTAG = "com.omf.resourcecontroller";
+		public static final String classTAG = "XMPPCommunicator";
 		//private XMPPConnectThread conthread = null;
 		
 		// XMPP variables
@@ -157,10 +157,10 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			try{
 				xmpp.connect(); 
 				if(xmpp.isConnected())
-					Log.i(TAG,"XMPP connected");
+					Log.i(appTAG,classTAG+": XMPP connected");
 			}catch(XMPPException e){
-				Log.e(TAG, "XMPP connection failed");
-				Log.d(TAG, "Check device connectivity or server name");
+				Log.e(appTAG, classTAG+": XMPP connection failed");
+				Log.d(appTAG, classTAG+": Check device connectivity or server name");
 				//xmpp = null;
 				return null;
 			} catch (SmackException e) {
@@ -219,20 +219,20 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				try {
 					//1st try
 					Xmpp.login(username, pass);
-					Log.i(TAG,"XMPP Logged in");
+					Log.i(appTAG,classTAG+": XMPP Logged in");
 				} catch (XMPPException e) {
-					Log.e(TAG, "XMPP login failed");
-					Log.i(TAG, "Creating new account");
+					Log.e(appTAG, classTAG+": XMPP login failed");
+					Log.i(appTAG, classTAG+": Creating new account");
 					
 						try {
 							if(registerUser(Xmpp,username,pass)){
 								try {
 									Xmpp.login(username, pass);
 									flag=true;
-								Log.i(TAG,"XMPP Logged in");
+								Log.i(appTAG,classTAG+": XMPP Logged in");
 								return true;
 								} catch (XMPPException e1) {	
-									Log.e(TAG,"XMPP Login failed");
+									Log.e(appTAG,classTAG+": XMPP Login failed");
 									return false;
 								} catch (SaslException e1) {
 									// TODO Auto-generated catch block
@@ -246,7 +246,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 								}	
 							}
 						} catch (XMPPException e1) {
-							Log.e(TAG,"Registration failed");
+							Log.e(appTAG,classTAG+": Registration failed");
 							return false;
 						}
 				} catch (SaslException e) {
@@ -299,24 +299,24 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					f.setSubscribe(true);						//true
 					
 					try{
-						Log.i(TAG, "Going to create node: "+topicName);
+						Log.i(appTAG, classTAG+": Going to create node: "+topicName);
 						eventNode = pubmgr.getNode(topicName);
 						//Put node to hashmap
 						Nodes.put(topicName,eventNode);
 					}catch(XMPPException e){
 						e.printStackTrace();
-						Log.e(TAG, "Problem getting node "+ topicName);
+						Log.e(appTAG, classTAG+": Problem getting node "+ topicName);
 						//If node doesn't exist create it
 						try {
-							Log.i(TAG, "Creating node "+topicName);
+							Log.i(appTAG, classTAG+": Creating node "+topicName);
 							eventNode = pubmgr.createNode(topicName,f);
 							//Put node to hashmap
-							Log.i(TAG, "Putting node"+topicName+"to hashmap");
+							Log.i(appTAG, classTAG+": Putting node "+topicName+" to hashmap");
 							Nodes.put(topicName,eventNode);
 							
 						} catch (XMPPException e1) {
 							e1.printStackTrace();
-							Log.e(TAG, "Problem creating node "+topicName);
+							Log.e(appTAG, classTAG+": Problem creating node "+topicName);
 							return null;
 						} catch (NoResponseException e1) {
 							// TODO Auto-generated catch block
@@ -360,7 +360,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 						
 					} catch (XMPPException e) {
 						e.printStackTrace();
-						Log.e(TAG, "Problem subscribing "+topicName);
+						Log.e(appTAG, classTAG+": Problem subscribing "+topicName);
 						return null;
 					} catch (NoResponseException e) {
 						// TODO Auto-generated catch block
@@ -386,7 +386,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		 */
 		public boolean registerUser(XMPPConnection mycon, String username, String  pass) throws XMPPException{
 			if(mycon != null && username!= null && pass != null){
-				Log.i(TAG, "Trying to register the user...!");
+				Log.i(appTAG, classTAG+": Trying to register the user...!");
 				//AccountManager mgr = mycon.getAccountManager();
 				AccountManager mgr = AccountManager.getInstance(mycon);
 				try {
@@ -401,7 +401,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				Log.i(TAG, "Account created: "+username);
+				Log.i(appTAG, classTAG+": Account created: "+username);
 				
 				//XMPP refresh connection
 				if(mycon!= null)
@@ -422,7 +422,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 					}
 					
 					//flag=true;
-					Log.i(TAG, "XMPP connection refresh ");
+					Log.i(appTAG, classTAG+": XMPP connection refresh ");
 				}
 				return true;
 			}
@@ -459,7 +459,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		 * @return boolean : true if destroy has succeeded, false otherwise
 		 */
 		public boolean destroySingleTopic(String topicName){
-			Log.i(TAG,"Destroy sigle topic");
+			Log.i(appTAG,classTAG+": Destroy sigle topic");
 			Node node = Nodes.get(topicName); 
 			ItemEventCoordinator nodeListener = NodeListeners.get(topicName);
 		    node.removeItemEventListener(nodeListener);
@@ -467,11 +467,11 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		    Nodes.remove(topicName);
 		    NodeListeners.remove(topicName);
 		    
-		    Log.i(TAG,"Destroy sigle topic2");
+		    Log.i(appTAG,classTAG+": Destroy sigle topic2");
 		    try {
 				pubmgr.deleteNode(topicName);
 			} catch (XMPPException e) {
-				Log.e(TAG,"Problem deleting node "+topicName);
+				Log.e(appTAG,classTAG+": Problem deleting node "+topicName);
 				return false;
 			} catch (NoResponseException e) {
 				// TODO Auto-generated catch block
@@ -494,10 +494,10 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			    ItemEventCoordinator nodeListener = NodeListeners.get(key);
 			    node.removeItemEventListener(nodeListener);
 			    try {
-			    	Log.i(TAG,"Deleting node: "+ key);
+			    	Log.i(appTAG,classTAG+": Deleting node: "+ key);
 					pubmgr.deleteNode(key);
 				} catch (XMPPException e) {
-					Log.e(TAG, "Node deletion problem");
+					Log.e(appTAG, classTAG+": Node deletion problem");
 					e.printStackTrace();
 				} catch (NoResponseException e) {
 					// TODO Auto-generated catch block
@@ -620,7 +620,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 	        	try {
 					parser2 = new XMPPParserV2();
 				} catch (XmlPullParserException e1) {
-					Log.e(TAG, "Updated Parser  problem");
+					Log.e(appTAG, classTAG+": Updated Parser  problem");
 				}
 	            List<PayloadItem> payloads = items.getItems();
 	            for(PayloadItem item : payloads)
@@ -670,20 +670,20 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				        				{
 				        					memberships = OMFMainHandler(omfMessage, listensTo, memberships, replysTo, properties);
 				        				}
-				        				Log.w(TAG, "############################################");
-				        				Log.i(TAG,listensTo+"##"+item.toString());
-				        				Log.w(TAG, "############################################");
+				        				Log.i(appTAG, classTAG+": ############################################");
+				        				Log.i(appTAG,classTAG+": "+listensTo+"##"+item.toString());
+				        				Log.i(appTAG, classTAG+": ############################################");
 			        					//System.out.println(omfMessage.toString());
 			        				}
 			        		}
 			        		else
 			        		{
-			        			Log.e(TAG, "Something went wrong, OMF Message is empty");
+			        			Log.e(appTAG, classTAG+": Something went wrong, OMF Message is empty");
 			        		}
 						} catch (XmlPullParserException e) {
-							Log.e(TAG,"PullParser exception");
+							Log.e(appTAG,classTAG+": PullParser exception");
 						} catch (IOException e) {
-							Log.e(TAG,"IO exception");
+							Log.e(appTAG,classTAG+": IO exception");
 						}
 					}
 				}  
@@ -697,19 +697,19 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		 */
 		class XMPPConnectionListener implements ConnectionListener{
 			 public void connectionClosed() {
-	             Log.d("SMACK","Connection closed ()");
+	             Log.d("SMACK",classTAG+": Connection closed ()");
 	         }
 	
 	         public void connectionClosedOnError(Exception e) {
-	             Log.d("SMACK","Connection closed due to an exception");
+	             Log.d("SMACK",classTAG+": Connection closed due to an exception");
 	             e.printStackTrace();
 	         }
 	         public void reconnectionFailed(Exception e) {
-	             Log.d("SMACK","Reconnection failed due to an exception");
+	             Log.d("SMACK",classTAG+": Reconnection failed due to an exception");
 	             e.printStackTrace();
 	         }
 	         public void reconnectionSuccessful() {
-	             Log.d("SMACK","Connection reconnected");
+	             Log.d("SMACK",classTAG+": Connection reconnected");
 	             if (flag){
 			             if(!xmpp.isAuthenticated()){
 			            	 XMPPLogin(xmpp,Username,Password);
@@ -717,7 +717,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 	             }
 	         }
 	         public void reconnectingIn(int seconds) {
-	             Log.d("SMACK","Connection will reconnect in " + seconds);
+	             Log.d("SMACK",classTAG+": Connection will reconnect in " + seconds);
 	         }
 
 			@Override
@@ -757,6 +757,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			
 			String myUid ="xmpp://"+fromTopic+"@"+serverName;
 			String myResType = "Android OMF 6 Resource Controller";
+			//String myType = "android_device";
 			
 			//I should add all the supported resource proxies
 			
@@ -768,11 +769,12 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			if(message.getMessageType().equalsIgnoreCase("create"))
 			{
 				
-				Log.i(TAG,fromTopic+": "+"create");
+				Log.i(appTAG,classTAG+": "+fromTopic+": "+"create");
 				if(message.getType().equalsIgnoreCase("application") || message.getType().equalsIgnoreCase("wlan"))
 				{
 
 					String appTopicName = UUID.randomUUID().toString();
+					Log.e(appTAG, classTAG+": "+appTopicName+" !!!!!!!!!!!!!!!!");
 					//String appTopicName = message.getMessageID();
 					Node applicationNode = createTopic(appTopicName,true,message.getType(),appTopicName, null,message.getPropertiesHashmap());
 					
@@ -870,7 +872,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			}
 			else if (message.getMessageType().equalsIgnoreCase("configure"))
 			{
-				Log.i(TAG,fromTopic+": "+"configure");
+				Log.i(appTAG,classTAG+": "+fromTopic+": "+"configure");
 				
 				
 				//If property membership exists
@@ -937,6 +939,8 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				if(message.getProperty("res_id")!=null)
 					propsMap = propGen.addProperties(propsMap, "res_id", new PropType(myResType,"string"));
 				
+				
+				//add properties interfaces,applications.devices,wlan_devices,supported_children_type[application,android application,uid,type="node",membership:[],child_resources:=>[]
 				//Add this membership to my membership list
 				genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propsMap);	//Send that i subscribed to membership
 				//publish outcome of membership to the new "member" node and to the original topic?()

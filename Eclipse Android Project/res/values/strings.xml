@@ -35,6 +35,8 @@
 	<string name="radioXMPP">XMPP</string>
     <string name="radioAMQP">AMQP</string>
 	
+    <string name="logString">Save logs</string>
+    
 	<string name="hint1">nitos.android.IMEI</string>
 	<string name="hint2">nitlab.inf.uth.gr</string>
 	

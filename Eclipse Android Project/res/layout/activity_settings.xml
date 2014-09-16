@@ -128,4 +128,14 @@
 
     </RadioGroup>
 
+    <CheckBox
+        android:id="@+id/checkBox1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/radioGroup1"
+        android:layout_alignLeft="@+id/radioGroup1"
+        android:layout_alignRight="@+id/radioGroup1"
+        android:text="@string/logString"
+        android:textColor="@color/white" />
+
 </RelativeLayout>

@@ -312,7 +312,7 @@ public class OMFProxyHandlers implements Constants {
 	 * @param toTopic : to which topic the resource proxy replies
 	 * @param nodes : HashMap of the created Nodes by the RC
 	 */
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings({ "unchecked" })
 	public List<String> OMFApplicationHandler(OMFMessage message, String fromTopic, List<String> memberships, String toTopic, HashMap<String, Node> nodes) throws IllegalArgumentException {
 		
 		Log.i(appTAG, classTAG+": IN APP HANDLER");
@@ -642,9 +642,14 @@ public class OMFProxyHandlers implements Constants {
 										//Process proc = Processes.get(fromTopic); //currently unused
 										Log.i(appTAG,classTAG+": Kill procces:" +pid);
 											
-											p=Runtime.getRuntime().exec("su -c kill -9 "+pid); //kill process -- requires rooted device otherwise process will continue to run
+											//
 											
-											tempThread.stop();	//stop thread
+											p=Runtime.getRuntime().exec("su -c kill -9 "+pid); //kill process -- requires rooted device otherwise process will continue to run
+											//tempThread.stop();	//stop thread
+											tempThread.interrupt();
+											tempThread = null;
+											
+											Log.w(appTAG, classTAG+": Executing command:"+ "su -c \"kill -9 "+pid+"\"");
 											Log.w(appTAG, classTAG+": Process with PID: "+pid+" destroyed");
 											ProcessesPID.remove(fromTopic);
 											Processes.remove(fromTopic);

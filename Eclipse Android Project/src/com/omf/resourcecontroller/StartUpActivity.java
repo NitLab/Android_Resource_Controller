@@ -14,6 +14,7 @@ import android.app.ActivityManager.RunningServiceInfo;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -115,7 +116,11 @@ public class StartUpActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			
-			
+				SharedPreferences settings = getSharedPreferences("ConnectionSettings", Context.MODE_PRIVATE);
+				Boolean logCheck = settings.getBoolean("log", false);
+				Log.e(appTAG,"############TEST: "+ logCheck);
+				
+				
 				Intent intent1 = new Intent(StartUpActivity.this, BackgroundService.class);
 				intent1.addFlags(Service.START_STICKY);
 				intent1.addFlags(Service.BIND_AUTO_CREATE);
@@ -126,13 +131,20 @@ public class StartUpActivity extends Activity {
 				
 				if(toggleService.isChecked() && !isServiceRunning("com.omf.resourcecontroller.BackgroundService")){
 						Log.i(appTAG, classTAG+": Start Service");
-						startService(loggerService);
+						
+						if(logCheck)
+						{
+							startService(loggerService);
+						}
 						startService(intent1);
 						
 				}else {
 					Log.i(appTAG, classTAG+": Stop Service");
 					stopService(intent1);
-					stopService(loggerService);
+					if(logCheck)
+					{
+						stopService(loggerService);
+					}
 				}
 			
 		}

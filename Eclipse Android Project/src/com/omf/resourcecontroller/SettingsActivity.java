@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -37,6 +38,8 @@ public class SettingsActivity extends Activity implements Constants{
 	private int selectedRadioId;
 	private RadioButton radioSelected;
 	private RadioGroup connectionGroup;
+	private CheckBox logCheckBox;
+	
 	
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -46,6 +49,10 @@ public class SettingsActivity extends Activity implements Constants{
 		connectionGroup = (RadioGroup)findViewById(R.id.radioGroup1);
 		
 		
+		//Checkbox? checkBox1
+		logCheckBox = (CheckBox)findViewById(R.id.checkBox1);
+		
+		//Connections settings fields
 		submitBtn = (Button)findViewById(R.id.button1);
 		usernameField   = (EditText)findViewById(R.id.editText1);
 		serverField   = (EditText)findViewById(R.id.editText2);
@@ -95,6 +102,18 @@ public class SettingsActivity extends Activity implements Constants{
 		            		server = DEFAULT_SERVER;
 		            		Log.i(appTAG,classTAG+": Default server chosen: " + server);
 		            		//editor.putString("server", server);
+		            	}
+		            	
+		            	
+		            	if(logCheckBox.isChecked())
+		            	{
+		            		Log.i(appTAG, classTAG+": Log is active");
+		            		editor.putBoolean("log", true);
+		            	}
+		            	else
+		            	{
+		            		Log.i(appTAG, classTAG+": Log is inactive");
+		            		editor.putBoolean("log", false);
 		            	}
 						
 		            	//ConnectionType Shared preference

@@ -55,6 +55,7 @@ public class LoggerService extends Service{
 		
 		try {
 			Runtime.getRuntime().exec("su -c kill -9 "+loggerPid);
+			Log.w(appTAG,classTAG+": Executing command: "+"su -c kill -9 "+loggerPid);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

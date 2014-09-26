@@ -459,7 +459,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		 * @return boolean : true if destroy has succeeded, false otherwise
 		 */
 		public boolean destroySingleTopic(String topicName){
-			Log.i(appTAG,classTAG+": Destroy sigle topic");
+			Log.i(appTAG,classTAG+": Destroy single topic");
 			Node node = Nodes.get(topicName); 
 			ItemEventCoordinator nodeListener = NodeListeners.get(topicName);
 		    node.removeItemEventListener(nodeListener);
@@ -467,7 +467,7 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 		    Nodes.remove(topicName);
 		    NodeListeners.remove(topicName);
 		    
-		    Log.i(appTAG,classTAG+": Destroy sigle topic2");
+		    Log.i(appTAG,classTAG+": Destroy single topic2");
 		    try {
 				pubmgr.deleteNode(topicName);
 			} catch (XMPPException e) {
@@ -757,6 +757,10 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 			
 			String myUid ="xmpp://"+fromTopic+"@"+serverName;
 			String myResType = "Android OMF 6 Resource Controller";
+			String myType = "android_device";
+			//String[] supportedChildrenType = {"application"};
+			List<String> supportedChildrenType = new ArrayList<String>();
+			supportedChildrenType.add("application");
 			//String myType = "android_device";
 			
 			//I should add all the supported resource proxies
@@ -939,7 +943,15 @@ import com.omf.resourcecontroller.parser.XMPPParserV2;
 				if(message.getProperty("res_id")!=null)
 					propsMap = propGen.addProperties(propsMap, "res_id", new PropType(myResType,"string"));
 				
-				
+				if(message.getPropertiesHashmap().isEmpty())
+				{
+					//NEEDS Testing!!!
+					//if the properties hashmap is empty reply with the supportedchildren
+					propsMap = propGen.addProperties(propsMap, "uid", new PropType(myUid,"string"));
+					propsMap = propGen.addProperties(propsMap, "supported_children_type",  new PropType(supportedChildrenType,"array"));
+					propsMap = propGen.addProperties(propsMap, "type", new PropType(myType,"string"));
+					propsMap = propGen.addProperties(propsMap, "membership", new PropType(memberships,"array"));
+				}	
 				//add properties interfaces,applications.devices,wlan_devices,supported_children_type[application,android application,uid,type="node",membership:[],child_resources:=>[]
 				//Add this membership to my membership list
 				genOMFmessage = xmlGen.informMessage(toTopic, serverName, message, "STATUS", propsMap);	//Send that i subscribed to membership

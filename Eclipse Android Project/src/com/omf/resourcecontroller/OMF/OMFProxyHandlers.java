@@ -9,6 +9,11 @@ package com.omf.resourcecontroller.OMF;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +27,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
@@ -201,12 +207,13 @@ public class OMFProxyHandlers implements Constants {
 			        it.remove(); // avoids a ConcurrentModificationException
 			    }
 		
-			    //Split ip and subnet
-			    if(IPaddressSubnet!=null){
-			    	IPaddress = regEx.ipaddressReg(IPaddressSubnet);
-			    	Log.i(appTAG,classTAG+": IP:"+IPaddress);
-			    	subnet = regEx.subnetReg(IPaddressSubnet);
-			    	Log.i(appTAG,classTAG+": subnet:"+subnet);
+			    
+			    
+			    if(WifiState!=null){
+				    if(WifiState.equalsIgnoreCase("enabled"))
+				    	wifiManager.setWifiEnabled(true);
+				    else
+				    	wifiManager.setWifiEnabled(false);
 			    }
 			    
 			    if(SSID!=null){
@@ -229,6 +236,7 @@ public class OMFProxyHandlers implements Constants {
 				    		Log.i(appTAG,classTAG+": Wpa security");
 				    		
 				    		newConf.preSharedKey = "\""+ securityKey +"\"";
+				    		
 				    	}
 				    }
 				    else{
@@ -239,17 +247,60 @@ public class OMFProxyHandlers implements Constants {
 				    
 				    Log.i(appTAG,classTAG+": SSID: "+SSID);
 				    
+				    //SET STATIC IP ETC in here
+				    if(IPaddressSubnet!=null){
+				    	IPaddress = regEx.ipaddressReg(IPaddressSubnet);
+				    	Log.i(appTAG,classTAG+": IP:"+IPaddress);
+				    	subnet = regEx.subnetReg(IPaddressSubnet);
+				    	Log.i(appTAG,classTAG+": subnet:"+subnet);
+				    	
+				    	
+				        
+				        
+				        try{
+				            setIpAssignment("STATIC", newConf); //or "DHCP" for dynamic setting
+				            setIpAddress(InetAddress.getByName(IPaddress), Integer.parseInt(subnet), newConf);
+				            setGateway(InetAddress.getByName(gateway), newConf);
+				            setDNS(InetAddress.getByName(dns), newConf);
+				            //wifiManager.updateNetwork(newConf); //apply the setting
+				            //wifiManager.saveConfiguration(); //Save it
+				        }catch(Exception e){
+				            e.printStackTrace();
+				        }
+			    	}
+				    else{
+				    	
+				    	//DHCP??
+				    	try{
+				            setIpAssignment("DHCP", newConf); //or "DHCP" for dynamic setting
+				            
+				            //wifiManager.updateNetwork(newConf); //apply the setting
+				            //wifiManager.saveConfiguration(); //Save it
+				        }catch(Exception e){
+				            e.printStackTrace();
+				        }
+				    }
 				    //add network to wifi manager
 				    wifiManager = (WifiManager)ctx.getSystemService(Context.WIFI_SERVICE);
-				    wifiManager.addNetwork(newConf);
+				    
+				    
+				    //Check if network exists in wifiConfiguration
+				    //Check boolean
+				    if(checkPreviousConfiguration(wifiManager,SSID))
+				    {
+				    	wifiManager.updateNetwork(newConf);
+				    }
+				    else
+				    {
+				    	wifiManager.addNetwork(newConf);
+				    }
+				    
+				    //dont know which one works update or add
+				    
+				    wifiManager.saveConfiguration();
 			    }
 			    
-			    if(WifiState!=null){
-				    if(WifiState.equalsIgnoreCase("enabled"))
-				    	wifiManager.setWifiEnabled(true);
-				    else
-				    	wifiManager.setWifiEnabled(false);
-			    }
+			    
 			   
 			    
 			    if((wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLED) || (wifiManager.getWifiState() == WifiManager.WIFI_STATE_ENABLING))
@@ -257,6 +308,7 @@ public class OMFProxyHandlers implements Constants {
 			    	Log.i(appTAG, classTAG+": if wifi state disabled shouldnt reach.");
 			    	//enable network
 				    List<WifiConfiguration> list = wifiManager.getConfiguredNetworks();
+				    Log.i(appTAG,classTAG+": WIFI configured networks: "+list.toString());
 				    for( WifiConfiguration i : list ) {
 				        if(i.SSID != null && i.SSID.equals("\"" + SSID + "\"")) {
 				        	Log.i(appTAG,classTAG+": Disconnect wifi");
@@ -271,6 +323,38 @@ public class OMFProxyHandlers implements Constants {
 				        }           
 				    }   
 				}
+			    
+			    
+			  //Split ip and subnet
+			    /*if(IPaddressSubnet!=null){
+			    	IPaddress = regEx.ipaddressReg(IPaddressSubnet);
+			    	Log.i(appTAG,classTAG+": IP:"+IPaddress);
+			    	subnet = regEx.subnetReg(IPaddressSubnet);
+			    	Log.i(appTAG,classTAG+": subnet:"+subnet);
+			    	
+			    	WifiConfiguration wifiConf = null;
+			    	WifiInfo connectionInfo = wifiManager.getConnectionInfo();
+			        List<WifiConfiguration> configuredNetworks = wifiManager.getConfiguredNetworks();        
+			        for (WifiConfiguration conf : configuredNetworks){
+			            if (conf.networkId == connectionInfo.getNetworkId()){
+			                wifiConf = conf;
+			                break;              
+			            }
+			        }
+			    	
+			        
+			        
+			        try{
+			            setIpAssignment("STATIC", wifiConf); //or "DHCP" for dynamic setting
+			            setIpAddress(InetAddress.getByName(IPaddress), Integer.parseInt(subnet), wifiConf);
+			            setGateway(InetAddress.getByName(gateway), wifiConf);
+			            setDNS(InetAddress.getByName(dns), wifiConf);
+			            wifiManager.updateNetwork(wifiConf); //apply the setting
+			            wifiManager.saveConfiguration(); //Save it
+			        }catch(Exception e){
+			            e.printStackTrace();
+			        }
+			    }*/
 		}
 		
 		
@@ -736,6 +820,7 @@ public class OMFProxyHandlers implements Constants {
 		else if (message.getMessageType().equalsIgnoreCase("request"))
 		{
 			Log.i(appTAG,classTAG+": "+fromTopic+": "+"request");
+			//Need to add replies for requests
 		}
 		else if (message.getMessageType().equalsIgnoreCase("inform"))
 		{
@@ -760,11 +845,85 @@ public class OMFProxyHandlers implements Constants {
 		        final String[] securityModes = { "WEP", "PSK", "EAP" };
 
 		        for (int i = securityModes.length - 1; i >= 0; i--) {
-		            if (cap.contains(securityModes[i])) {
+		        	if (cap.contains(securityModes[i])) {
 		                return securityModes[i];
 		            }
 		        }
 
 		        return "OPEN";
 		    }
+		    
+		    
+		    public static void setIpAssignment(String assign , WifiConfiguration wifiConf)
+		    	    throws SecurityException, IllegalArgumentException, NoSuchFieldException, IllegalAccessException{
+		    	        setEnumField(wifiConf, assign, "ipAssignment");     
+		    	    }
+
+		    	    public static void setIpAddress(InetAddress addr, int prefixLength, WifiConfiguration wifiConf)
+		    	    throws SecurityException, IllegalArgumentException, NoSuchFieldException, IllegalAccessException,
+		    	    NoSuchMethodException, ClassNotFoundException, InstantiationException, InvocationTargetException{
+		    	        Object linkProperties = getField(wifiConf, "linkProperties");
+		    	        if(linkProperties == null)return;
+		    	        Class laClass = Class.forName("android.net.LinkAddress");
+		    	        Constructor laConstructor = laClass.getConstructor(new Class[]{InetAddress.class, int.class});
+		    	        Object linkAddress = laConstructor.newInstance(addr, prefixLength);
+
+		    	        ArrayList mLinkAddresses = (ArrayList)getDeclaredField(linkProperties, "mLinkAddresses");
+		    	        mLinkAddresses.clear();
+		    	        mLinkAddresses.add(linkAddress);        
+		    	    }
+
+		    	    public static void setGateway(InetAddress gateway, WifiConfiguration wifiConf)
+		    	    throws SecurityException, IllegalArgumentException, NoSuchFieldException, IllegalAccessException, 
+		    	    ClassNotFoundException, NoSuchMethodException, InstantiationException, InvocationTargetException{
+		    	        Object linkProperties = getField(wifiConf, "linkProperties");
+		    	        if(linkProperties == null)return;
+		    	        Class routeInfoClass = Class.forName("android.net.RouteInfo");
+		    	        Constructor routeInfoConstructor = routeInfoClass.getConstructor(new Class[]{InetAddress.class});
+		    	        Object routeInfo = routeInfoConstructor.newInstance(gateway);
+
+		    	        ArrayList mRoutes = (ArrayList)getDeclaredField(linkProperties, "mRoutes");
+		    	        mRoutes.clear();
+		    	        mRoutes.add(routeInfo);
+		    	    }
+
+		    	    public static void setDNS(InetAddress dns, WifiConfiguration wifiConf)
+		    	    throws SecurityException, IllegalArgumentException, NoSuchFieldException, IllegalAccessException{
+		    	        Object linkProperties = getField(wifiConf, "linkProperties");
+		    	        if(linkProperties == null)return;
+
+		    	        ArrayList<InetAddress> mDnses = (ArrayList<InetAddress>)getDeclaredField(linkProperties, "mDnses");
+		    	        mDnses.clear(); //or add a new dns address , here I just want to replace DNS1
+		    	        mDnses.add(dns); 
+		    	    }
+
+		    	    public static Object getField(Object obj, String name)
+		    	    throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException{
+		    	        Field f = obj.getClass().getField(name);
+		    	        Object out = f.get(obj);
+		    	        return out;
+		    	    }
+
+		    	    public static Object getDeclaredField(Object obj, String name)
+		    	    throws SecurityException, NoSuchFieldException,
+		    	    IllegalArgumentException, IllegalAccessException {
+		    	        Field f = obj.getClass().getDeclaredField(name);
+		    	        f.setAccessible(true);
+		    	        Object out = f.get(obj);
+		    	        return out;
+		    	    }  
+
+		    	    public static void setEnumField(Object obj, String value, String name)
+		    	    throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException{
+		    	        Field f = obj.getClass().getField(name);
+		    	        f.set(obj, Enum.valueOf((Class<Enum>) f.getType(), value));
+		    	    }
+		    	    
+		    	    public boolean checkPreviousConfiguration(WifiManager wifiManager,String SSID) {
+		    	        List<WifiConfiguration> configs = wifiManager.getConfiguredNetworks();
+		    	        for(WifiConfiguration config : configs) {
+		    	            if(config.SSID.equals("\"" + SSID + "\"")) return true;
+		    	        }
+		    	        return false;
+		    	    }
 }

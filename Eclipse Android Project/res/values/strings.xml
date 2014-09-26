@@ -32,6 +32,8 @@
 	<string name="uid">UID:</string>
 	<string name="uri">Server Name:</string>
 	
+	<string name="toast_crash">OMF Crashed. Sending Bug Report!</string>
+	
 	<string name="radioXMPP">XMPP</string>
     <string name="radioAMQP">AMQP</string>
 	

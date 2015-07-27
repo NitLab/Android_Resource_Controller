@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\libs\org.xbill.dns_2.1.6.jar"
+        jumboMode="false"
+        revision="23.0.0 rc2"
+        sha1="c181799179cbd3aad85439268ec65ddb0b0c96f8">
+        <dex dex="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\build\intermediates\pre-dexed\debug\org.xbill.dns_2.1.6-c449b819722a4e56d23e8230d3a2c0166620d5dd.jar" />
+    </item>
+    <item
+        jar="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\libs\asmack-android-8-4.0.4.jar"
+        jumboMode="false"
+        revision="23.0.0 rc2"
+        sha1="3c4d7c0ceac86e2bc7e33172bfc0275a6b2f6da6">
+        <dex dex="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\build\intermediates\pre-dexed\debug\asmack-android-8-4.0.4-d26ed1ab38939a947e9ab1aaeefbc795d839a4f0.jar" />
+    </item>
+    <item
+        jar="C:\Users\Polychronis\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-v4\19.1.0\support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="23.0.0 rc2"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67">
+        <dex dex="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\build\intermediates\pre-dexed\debug\support-v4-19.1.0-5d46c77b5cde3c2de83e0c683e2ac84a595af3b1.jar" />
+    </item>
+    <item
+        jar="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\libs\acra-4.5.0.jar"
+        jumboMode="false"
+        revision="23.0.0 rc2"
+        sha1="44a5eb946e0d83eed4a0128d877ca1fd8168b83a">
+        <dex dex="C:\Users\Polychronis\Dropbox\NITLab - Eketa\Android_Resource_Controller\Android Studio Project\app\build\intermediates\pre-dexed\debug\acra-4.5.0-3009d9970d57091815564f2ec8795950cf7780ea.jar" />
+    </item>
+
+</items>

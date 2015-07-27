@@ -1,0 +1,26 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "23.0.0 rc2"
+
+    defaultConfig {
+        applicationId "com.omf.resourcecontroller"
+        minSdkVersion 9
+        targetSdkVersion 19
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:19.1.0'
+    compile files('libs/acra-4.5.0.jar')
+    compile files('libs/asmack-android-8-4.0.4.jar')
+    compile files('libs/org.xbill.dns_2.1.6.jar')
+}

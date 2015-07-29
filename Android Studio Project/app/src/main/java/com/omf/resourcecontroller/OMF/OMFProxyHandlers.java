@@ -772,8 +772,9 @@ public class OMFProxyHandlers implements Constants {
 							    while (it.hasNext()) {
 							        Map.Entry<String, Object> pairs = (Map.Entry<String, Object>)it.next();
 							       
-							        key = pairs.getKey();
-							        propType =(PropType) pairs.getValue();
+							        //key = pairs.getKey();
+									key = packageName+"."+pairs.getKey(); /////// PATCH/////
+									propType =(PropType) pairs.getValue();
 
 							        if(propType.getType().equalsIgnoreCase("hash"))
 							        {
@@ -807,6 +808,7 @@ public class OMFProxyHandlers implements Constants {
 							        }
 							        it.remove(); // avoids a ConcurrentModificationException
 							    }
+								putOmlExtras(broadcastIntent); ////////////// PATCH /////////////
 							    //send broadcast here
 							    ctx.sendBroadcast(broadcastIntent);
 						}
@@ -834,9 +836,43 @@ public class OMFProxyHandlers implements Constants {
 		
 		return memberships;
 	}
-	
-	
-	
+
+			////////////////// PATCH /////////////////////////////////////////
+			private void putOmlExtras(Intent intent) {
+					String useOml = getProperty(properties, "use_oml");
+					if((useOml!=null) && (useOml.equalsIgnoreCase("true"))) {
+						HashMap<String, Object> omlProperties = getProperty(properties, "oml");
+
+						if(omlProperties!=null) {
+								String id = getProperty(omlProperties, "id");
+								if (id!=null) {
+										intent.putExtra("com.omf.resourcecontroller.EXTRA_OML_ID", id);
+								}
+
+								String experiment = getProperty(omlProperties, "experiment");
+								if (experiment!=null) {
+										intent.putExtra("com.omf.resourcecontroller.EXTRA_OML_EXPERIMENT", experiment);
+								}
+						}
+					}
+			}
+
+
+			private <T> T getProperty(HashMap<String, Object> properties, String propertyName) {
+				T propertyValue = null;
+				PropType property = (PropType)properties.get(propertyName);
+
+				if (property!=null) {
+					try {
+							propertyValue = (T)property.getProp();
+					} catch (ClassCastException e) {
+							propertyValue = null;
+					}
+				}
+				return propertyValue;
+			}
+			///////////////////////////// PATCH ////////////////////////////////
+
 
 		    
 		    public String getScanResultSecurity(ScanResult scanResult) {
